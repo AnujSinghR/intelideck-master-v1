@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 import { Upload } from "lucide-react";
 import { useState, useRef } from "react";
+import { useUpload } from "./UploadContext";
 
 interface FileUploadModalProps {
   isOpen: boolean;
@@ -22,9 +23,31 @@ export function FileUploadModal({
   title = "Upload File"
 }: FileUploadModalProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isLoading: isUploading } = useUpload();
+
+  const formatAcceptedTypes = (types: string) => {
+    return types.split(',').map(type => {
+      return type.trim().replace('application/', '').toUpperCase();
+    }).join(', ');
+  };
+
+  const validateFileType = (file: File) => {
+    const acceptedTypesList = acceptedTypes.split(',').map(type => type.trim());
+    if (!acceptedTypesList.includes(file.type)) {
+      throw new Error(`Invalid file type. Accepted types: ${formatAcceptedTypes(acceptedTypes)}`);
+    }
+  };
+
+  const validateFileSize = (file: File) => {
+    if (file.size > maxSize) {
+      throw new Error(`File size exceeds ${maxSize / (1024 * 1024)}MB limit`);
+    }
+    if (file.size === 0) {
+      throw new Error("File is empty");
+    }
+  };
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -41,10 +64,6 @@ export function FileUploadModal({
     setIsDragging(false);
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      if (!acceptedTypes.includes(files[0].type)) {
-        setError(`Only ${acceptedTypes} files are allowed`);
-        return;
-      }
       await handleFile(files[0]);
     }
   };
@@ -52,10 +71,6 @@ export function FileUploadModal({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      if (!acceptedTypes.includes(files[0].type)) {
-        setError(`Only ${acceptedTypes} files are allowed`);
-        return;
-      }
       await handleFile(files[0]);
     }
   };
@@ -63,20 +78,16 @@ export function FileUploadModal({
   const handleFile = async (file: File) => {
     setError(null);
 
-    if (file.size > maxSize) {
-      setError(`File size exceeds ${maxSize / (1024 * 1024)}MB limit`);
-      return;
-    }
-
     try {
-      setIsUploading(true);
+      // Validate file before processing
+      validateFileType(file);
+      validateFileSize(file);
+
       await onFileUpload(file);
       onClose();
     } catch (error) {
       console.error("Error uploading file:", error);
-      setError("Failed to upload file. Please try again.");
-    } finally {
-      setIsUploading(false);
+      setError(error instanceof Error ? error.message : "Failed to upload file. Please try again.");
     }
   };
 
@@ -96,8 +107,11 @@ export function FileUploadModal({
         }
       }}
     >
-      <DialogContent className="sm:max-w-[475px] p-0 bg-gradient-to-br from-indigo-600 to-purple-700 border-0 shadow-2xl">
-        <DialogTitle className="sr-only">{title}</DialogTitle>
+      <DialogContent 
+        className="sm:max-w-[475px] p-0 bg-gradient-to-br from-indigo-600 to-purple-700 border-0 shadow-2xl"
+        aria-labelledby="upload-dialog-title"
+      >
+        <DialogTitle id="upload-dialog-title" className="sr-only">{title}</DialogTitle>
         <div
           className={`flex flex-col items-center justify-center p-12 text-white border-2 border-dashed border-white/40 m-4 rounded-xl transition-all duration-300 ${
             isUploading ? "cursor-wait" : "cursor-pointer hover:border-white/60"
@@ -107,6 +121,9 @@ export function FileUploadModal({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={handleClick}
+          role="button"
+          tabIndex={0}
+          aria-label={`Click or drag and drop to upload a ${formatAcceptedTypes(acceptedTypes)} file`}
         >
           <input
             type="file"
@@ -115,9 +132,15 @@ export function FileUploadModal({
             className="hidden"
             accept={acceptedTypes}
             disabled={isUploading}
+            aria-label={`Choose a ${formatAcceptedTypes(acceptedTypes)} file`}
           />
           <div className="relative">
-            <div className={`w-20 h-20 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center mb-8 transition-transform duration-300 ${isDragging ? 'scale-110' : ''} ${isUploading ? 'animate-pulse' : ''}`}>
+            <div 
+              className={`w-20 h-20 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center mb-8 transition-transform duration-300 ${
+                isDragging ? 'scale-110' : ''
+              } ${isUploading ? 'animate-pulse' : ''}`}
+              aria-hidden="true"
+            >
               <Upload
                 className={`h-10 w-10 text-indigo-600 transition-transform duration-300 ${
                   isDragging ? 'scale-110' : ''
@@ -125,7 +148,11 @@ export function FileUploadModal({
               />
             </div>
             {isUploading && (
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div 
+                className="absolute inset-0 flex items-center justify-center"
+                role="progressbar"
+                aria-label="Uploading file"
+              >
                 <div className="w-24 h-24 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
               </div>
             )}
@@ -139,15 +166,25 @@ export function FileUploadModal({
                 {isUploading ? (
                   "Please wait while we process your file..."
                 ) : error ? (
-                  <span className="text-red-200 bg-red-500/20 px-3 py-1.5 rounded-full">{error}</span>
+                  <span 
+                    className="text-red-200 bg-red-500/20 px-3 py-1.5 rounded-full"
+                    role="alert"
+                  >
+                    {error}
+                  </span>
                 ) : (
                   "Click here or drag and drop a file to upload."
                 )}
               </p>
               {!isUploading && !error && (
-                <p className="text-sm text-blue-200/80 bg-white/10 px-4 py-1.5 rounded-full inline-block backdrop-blur-sm">
-                  Maximum file size: {maxSize / (1024 * 1024)}MB
-                </p>
+                <div className="space-y-2">
+                  <p className="text-sm text-blue-200/80 bg-white/10 px-4 py-1.5 rounded-full inline-block backdrop-blur-sm">
+                    Maximum file size: {maxSize / (1024 * 1024)}MB
+                  </p>
+                  <p className="text-sm text-blue-200/80">
+                    Accepted types: {formatAcceptedTypes(acceptedTypes)}
+                  </p>
+                </div>
               )}
             </div>
           </div>

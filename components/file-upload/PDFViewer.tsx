@@ -7,10 +7,23 @@ import { PDFDocumentProxy } from "pdfjs-dist/types/src/display/api";
 import { ScrollArea } from "../ui/scroll-area";
 import { Loader2, ZoomIn, ZoomOut, Maximize, Minimize } from "lucide-react";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.mjs";
+// Ensure worker is loaded correctly in both development and production
+const workerSrc = typeof window !== 'undefined' 
+  ? `${window.location.origin}/pdf.worker.mjs`
+  : '/pdf.worker.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
-// Cache for storing rendered pages
+// Cache for storing rendered pages with size limit
+const MAX_CACHE_SIZE = 50; // Maximum number of pages to cache
 const pageCache = new Map<string, ImageBitmap>();
+
+// Helper function to manage cache size
+const limitCacheSize = () => {
+  if (pageCache.size > MAX_CACHE_SIZE) {
+    const keysToDelete = Array.from(pageCache.keys()).slice(0, pageCache.size - MAX_CACHE_SIZE);
+    keysToDelete.forEach(key => pageCache.delete(key));
+  }
+};
 
 interface PDFPageCanvasProps {
   pdf: PDFDocumentProxy;
@@ -22,6 +35,7 @@ interface PDFPageCanvasProps {
 const PDFPageCanvas = memo(function PDFPageCanvas({ pdf, pageNumber, scale, onRenderComplete }: PDFPageCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isRendering, setIsRendering] = useState(false);
+  const [renderError, setRenderError] = useState<string | null>(null);
   const renderTaskRef = useRef<any>(null);
   const cacheKey = `${pageNumber}-${scale}`;
 
@@ -33,6 +47,7 @@ const PDFPageCanvas = memo(function PDFPageCanvas({ pdf, pageNumber, scale, onRe
 
       try {
         setIsRendering(true);
+        setRenderError(null);
 
         // Check cache first
         const cachedPage = pageCache.get(cacheKey);
@@ -79,6 +94,7 @@ const PDFPageCanvas = memo(function PDFPageCanvas({ pdf, pageNumber, scale, onRe
           // Cache the rendered page
           const bitmap = await createImageBitmap(canvas);
           pageCache.set(cacheKey, bitmap);
+          limitCacheSize();
           onRenderComplete?.();
         }
 
@@ -86,6 +102,7 @@ const PDFPageCanvas = memo(function PDFPageCanvas({ pdf, pageNumber, scale, onRe
       } catch (error: any) {
         if (error?.name !== 'RenderingCancelledException') {
           console.error("Error rendering PDF page:", error);
+          setRenderError(`Error rendering page ${pageNumber}. Please try refreshing.`);
         }
       } finally {
         if (isMounted) {
@@ -103,6 +120,14 @@ const PDFPageCanvas = memo(function PDFPageCanvas({ pdf, pageNumber, scale, onRe
       }
     };
   }, [pdf, pageNumber, scale, cacheKey, onRenderComplete]);
+
+  if (renderError) {
+    return (
+      <div className="p-4 bg-red-50 rounded-lg text-red-600">
+        {renderError}
+      </div>
+    );
+  }
 
   return (
     <div className="relative">
@@ -202,6 +227,8 @@ export function PDFViewer({ className = "" }: PDFViewerProps) {
           data: byteArray,
           cMapUrl: "/cmaps/",
           cMapPacked: true,
+          enableXfa: true, // Enable support for XFA forms
+          useSystemFonts: true, // Use system fonts when possible
         });
 
         loadingTask.onProgress = (progress: { loaded: number; total: number }) => {
