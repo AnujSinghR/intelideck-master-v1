@@ -22,7 +22,25 @@ export async function POST(req: Request) {
         model: 'claude-3-sonnet-20240229',
         messages: [{
           role: 'user',
-          content: `Please organize and structure the following extracted PDF text into well-formatted pages. Each page should be clearly separated and organized with proper paragraphs, headings, and sections where appropriate. Here's the text:\n\n${text}`
+          content: `Please analyze and format the following text into well-organized sections that will be rendered on A4 pages. Each section should be marked with '---PAGE_BREAK---'.
+
+Important guidelines:
+1. Each section should be sized appropriately for an A4 page (approximately 500-600 words with standard margins)
+2. Break content at natural topic transitions
+3. Use clear paragraph breaks for readability
+4. Add section headings where appropriate
+5. Keep paragraphs concise and well-structured
+6. Ensure each section can stand alone while maintaining flow
+7. Mark each section with '---PAGE_BREAK---'
+
+Here's the text to process:
+
+${text}
+
+Remember:
+- Size sections appropriately for A4 pages
+- Use clear paragraph breaks
+- Mark sections with '---PAGE_BREAK---'`
         }],
         max_tokens: 4000
       }),
@@ -36,7 +54,7 @@ export async function POST(req: Request) {
 
     const data = await response.json();
     return NextResponse.json({ 
-      formattedText: data.content[0].text 
+      formattedText: data.content[0].text.split('---PAGE_BREAK---').map((page: string) => page.trim()).filter((page: string) => page.length > 0)
     });
   } catch (error: any) {
     console.error('PDF Processing Error:', error);

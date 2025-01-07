@@ -80,8 +80,8 @@ export function PDFTextExtractor() {
         throw new Error('Failed to process text');
       }
 
-      const data: { formattedText: string } = await response.json();
-      const processedPages = data.formattedText.split('--- Page Break ---').map(text => text.trim());
+      const data: { formattedText: string[] } = await response.json();
+      const processedPages = data.formattedText;
       setFormattedPages(processedPages);
       setShowFormatted(true);
     } catch (error) {
