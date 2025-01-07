@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TextItem } from 'pdfjs-dist/types/src/display/api';
 import { useUpload } from './UploadContext';
 import { Button } from '../ui/button';
-import { Loader2, Copy, Check, Search } from 'lucide-react';
+import { Loader2, Copy, Check, Search, FileText } from 'lucide-react';
+import { FormattedPDFView } from './FormattedPDFView';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
 
@@ -19,6 +20,9 @@ export function PDFTextExtractor() {
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [extractedPages, setExtractedPages] = useState<ExtractedPage[]>([]);
+  const [formattedPages, setFormattedPages] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showFormatted, setShowFormatted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCopied, setIsCopied] = useState(false);
@@ -59,6 +63,34 @@ export function PDFTextExtractor() {
     loadPDF();
   }, [fileBase64]);
 
+  const processText = async (pages: ExtractedPage[]): Promise<void> => {
+    try {
+      setIsProcessing(true);
+      const response = await fetch('/api/process-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: pages.map(page => page.text).join('\n\n--- Page Break ---\n\n')
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to process text');
+      }
+
+      const data: { formattedText: string } = await response.json();
+      const processedPages = data.formattedText.split('--- Page Break ---').map(text => text.trim());
+      setFormattedPages(processedPages);
+      setShowFormatted(true);
+    } catch (error) {
+      console.error('Error processing text:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const extractText = async () => {
     if (!pdfDoc) return;
     
@@ -93,7 +125,9 @@ export function PDFTextExtractor() {
         setExtractionProgress(Math.round(((i + batchSize) / numPages) * 100));
       }
 
-      setExtractedPages(extractedText.sort((a, b) => a.pageNum - b.pageNum));
+      const sortedPages = extractedText.sort((a, b) => a.pageNum - b.pageNum);
+      setExtractedPages(sortedPages);
+      await processText(sortedPages);
     } catch (err) {
       setError('Error extracting text: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
@@ -137,15 +171,19 @@ export function PDFTextExtractor() {
     );
   }
 
+  if (showFormatted && formattedPages.length > 0) {
+    return <FormattedPDFView pages={formattedPages} />;
+  }
+
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 border-b border-indigo-100 bg-gradient-to-r from-white to-indigo-50/30">
         <div className="flex flex-wrap items-center gap-3">
-          <Button
-            onClick={extractText}
-            disabled={!pdfDoc || isLoading}
-            className="relative"
-          >
+            <Button
+              onClick={extractText}
+              disabled={!pdfDoc || isLoading || isProcessing}
+              className="relative"
+            >
             {isLoading ? (
               <div className="flex items-center space-x-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -153,8 +191,17 @@ export function PDFTextExtractor() {
               </div>
             ) : (
               <div className="flex items-center space-x-2">
-                <Search className="h-4 w-4" />
-                <span>Extract Text</span>
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4" />
+                    <span>Extract & Format</span>
+                  </>
+                )}
               </div>
             )}
           </Button>

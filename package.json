@@ -26,6 +26,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "fabric": "^6.5.3",
+    "html2pdf.js": "^0.10.2",
     "lucide-react": "^0.454.0",
     "next": "15.0.1",
     "openai": "^4.68.4",
