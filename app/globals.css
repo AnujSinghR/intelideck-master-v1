@@ -2,140 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
- 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
- 
-    --radius: 0.5rem;
-  }
- 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
- 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
+/* A4 page styles */
+.a4-page {
+  /* 1mm = 3.7795275591px */
+  width: 210mm;
+  height: 297mm;
+  margin: 0 auto;
+  background: #1E2240;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
- 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  input {
-    @apply bg-white;
+
+/* Print styles */
+@media print {
+  .a4-page {
+    margin: 0;
+    box-shadow: none;
+    break-after: page;
   }
 }
 
-.bg-gradient {
-  background: linear-gradient(to bottom right, #f5f3ff, #ffffff, #ede9fe);
-}
-
-/* Custom Scrollbar Styles */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #818cf8 #e0e7ff;
-}
-
+/* Scrollbar styles */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
-  height: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #e0e7ff;
-  border-radius: 100vh;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #818cf8, #6366f1);
-  border-radius: 100vh;
-  border: 2px solid #e0e7ff;
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #6366f1, #4f46e5);
-}
-
-/* PDF Viewer Animations */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-slide-in {
-  animation: slideIn 0.3s ease-out forwards;
-}
-
-/* Glass Effect */
-.glass-effect {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-/* Gradient Text */
-.gradient-text {
-  background: linear-gradient(to right, #4f46e5, #7c3aed);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  background: rgba(99, 102, 241, 0.5);
 }

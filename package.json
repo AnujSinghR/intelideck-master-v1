@@ -17,6 +17,7 @@
     "@radix-ui/react-scroll-area": "^1.2.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.2",
+    "@react-pdf/renderer": "^4.1.6",
     "@types/pdfjs-dist": "^2.10.377",
     "@types/react-pdf": "^6.2.0",
     "@uploadthing/react": "^7.1.0",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TextItem } from 'pdfjs-dist/types/src/display/api';
 import { useUpload } from './UploadContext';
@@ -66,26 +66,48 @@ export function PDFTextExtractor() {
   const processText = async (pages: ExtractedPage[]): Promise<void> => {
     try {
       setIsProcessing(true);
+
+      // Pre-process text to improve structure detection
+      const processedText = pages.map(page => {
+        // Split text into lines and clean up
+        const lines = page.text
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0);
+
+        // Detect and format potential headers
+        const formattedLines = lines.map(line => {
+          // Check for potential headers (short lines with specific endings)
+          if (line.length < 100 && (line.endsWith(':') || /^[A-Z][^.!?]*[.!?]$/.test(line))) {
+            return `[H2]${line}[/H2]`;
+          }
+          return line;
+        });
+
+        return formattedLines.join('\n');
+      });
+
+      // Join pages with page breaks
+      const combinedText = processedText.join('\n\n---PAGE_BREAK---\n\n');
+
       const response = await fetch('/api/process-pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          text: pages.map(page => page.text).join('\n\n--- Page Break ---\n\n')
-        }),
+        body: JSON.stringify({ text: combinedText }),
       });
 
       if (!response.ok) {
         throw new Error('Failed to process text');
       }
 
-      const data: { formattedText: string[] } = await response.json();
-      const processedPages = data.formattedText;
-      setFormattedPages(processedPages);
+      const data = await response.json();
+      setFormattedPages(data.formattedText);
       setShowFormatted(true);
     } catch (error) {
       console.error('Error processing text:', error);
+      setError('Failed to process text. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -114,9 +136,25 @@ export function PDFTextExtractor() {
           batch.map(async (pageNum) => {
             const page = await pdfDoc.getPage(pageNum);
             const textContent = await page.getTextContent();
-            const text = textContent.items
-              .map((item) => (item as TextItem).str)
-              .join(' ');
+            
+            // Improved text extraction with better spacing
+            let lastY: number | null = null;
+            let text = '';
+            
+            textContent.items.forEach((item) => {
+              const textItem = item as TextItem;
+              // Add newline if Y position changes significantly
+              if (lastY !== null && Math.abs(textItem.transform[5] - lastY) > 5) {
+                text += '\n';
+              }
+              // Add space if items are on the same line but separated
+              else if (text.length > 0 && !text.endsWith(' ') && !text.endsWith('\n')) {
+                text += ' ';
+              }
+              text += textItem.str;
+              lastY = textItem.transform[5];
+            });
+
             return { pageNum, text };
           })
         );
@@ -137,7 +175,7 @@ export function PDFTextExtractor() {
   };
 
   const handleCopyText = useCallback(async () => {
-    const text = extractedPages.map(page => page.text).join('\n\n--- Page Break ---\n\n');
+    const text = extractedPages.map(page => page.text).join('\n\n---PAGE_BREAK---\n\n');
     try {
       await navigator.clipboard.writeText(text);
       setIsCopied(true);
@@ -179,11 +217,11 @@ export function PDFTextExtractor() {
     <div className="h-full flex flex-col">
       <div className="p-4 border-b border-indigo-100 bg-gradient-to-r from-white to-indigo-50/30">
         <div className="flex flex-wrap items-center gap-3">
-            <Button
-              onClick={extractText}
-              disabled={!pdfDoc || isLoading || isProcessing}
-              className="relative"
-            >
+          <Button
+            onClick={extractText}
+            disabled={!pdfDoc || isLoading || isProcessing}
+            className="relative"
+          >
             {isLoading ? (
               <div className="flex items-center space-x-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
