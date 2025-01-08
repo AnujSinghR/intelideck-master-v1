@@ -67,14 +67,14 @@ const prompts = [
 ];
 
 const colorCombos = [
-  { bg: "from-violet-500 to-purple-600", text: "text-white" },
-  { bg: "from-blue-500 to-indigo-600", text: "text-white" },
-  { bg: "from-emerald-500 to-teal-600", text: "text-white" },
-  { bg: "from-cyan-500 to-blue-600", text: "text-white" },
-  { bg: "from-rose-500 to-pink-600", text: "text-white" },
-  { bg: "from-amber-500 to-orange-600", text: "text-white" },
-  { bg: "from-purple-500 to-indigo-600", text: "text-white" },
-  { bg: "from-green-500 to-emerald-600", text: "text-white" },
+  { bg: "from-blue-100 to-blue-200", text: "text-slate-700" },
+  { bg: "from-emerald-100 to-teal-200", text: "text-slate-700" },
+  { bg: "from-violet-100 to-purple-200", text: "text-slate-700" },
+  { bg: "from-rose-100 to-pink-200", text: "text-slate-700" },
+  { bg: "from-amber-100 to-orange-200", text: "text-slate-700" },
+  { bg: "from-cyan-100 to-sky-200", text: "text-slate-700" },
+  { bg: "from-slate-100 to-blue-200", text: "text-slate-700" },
+  { bg: "from-teal-100 to-emerald-200", text: "text-slate-700" },
 ];
 
 export default function DemoPage() {
@@ -234,8 +234,9 @@ export default function DemoPage() {
     slides.forEach((slide) => {
       const pptSlide = pres.addSlide();
 
+      // Set light theme background
       const bgColor = slide.bgColor.split(' ')[1].replace('to-', '');
-      pptSlide.background = { color: bgColor.replace('-600', '') };
+      pptSlide.background = { color: bgColor.replace('-200', '') };
 
       // Add title with dynamic font size based on length
       const titleFontSize = slide.title.length > 50 ? 32 : slide.title.length > 30 ? 36 : 40;
@@ -245,7 +246,7 @@ export default function DemoPage() {
         w: '90%',
         h: '20%',
         fontSize: titleFontSize,
-        color: 'FFFFFF',
+        color: '334155', // slate-700
         bold: true,
         align: 'center',
         valign: 'middle',
@@ -269,7 +270,7 @@ export default function DemoPage() {
           w: '80%',
           h: `${pointHeight}%`,
           fontSize: fontSize,
-          color: 'FFFFFF',
+          color: '334155', // slate-700
           bullet: true,
           valign: 'middle',
           wrap: true,
@@ -282,20 +283,110 @@ export default function DemoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-indigo-50 py-12">
-      <MaxWidthWrapper className="max-w-[90%] xl:max-w-[1400px]">
-        <div className="mx-auto space-y-8">
-          {slides.length > 0 ? (
-            <>
-              <div className="flex justify-between items-center">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-slate-50 via-blue-50 to-slate-50 py-12">
+      <MaxWidthWrapper className="max-w-[100%] xl:max-w-[1600px]">
+        <div className="mx-auto flex gap-8">
+          {/* Left Side: Chat Section */}
+          <div className="w-[35%] space-y-8 sticky top-6 self-start">
+              <Card className="p-8 shadow-xl bg-slate-900 backdrop-blur-sm border-slate-800 rounded-xl h-[calc(100vh-8rem)] flex flex-col">
+              <div className="space-y-4 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-slate-700">
+                {messages.length === 0 && (
+                  <div className="text-center py-16 relative">
+                    <div className="absolute inset-0 bg-blue-500/10 blur-3xl rounded-full"></div>
+                    <AlertCircle className="h-20 w-20 mx-auto mb-8 text-blue-400/80 animate-pulse" />
+                    <p className="text-xl font-light text-slate-400">Choose a template or start your own conversation!</p>
+                  </div>
+                )}
+                {messages.map((message: Message, index: number) => (
+                  <div
+                    key={index}
+                    className={`p-6 rounded-xl ${
+                      message.role === "user"
+                        ? "bg-blue-500/10 ml-12 border border-blue-500/20"
+                        : "bg-slate-800/80 mr-12 border border-slate-700"
+                    } transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/5 backdrop-blur-sm`}
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                        message.role === "user" 
+                          ? "bg-blue-500/20 text-blue-400"
+                          : "bg-slate-700 text-slate-300"
+                      }`}>
+                        {message.role === "user" ? "👤" : "🤖"}
+                      </div>
+                      <div className={`font-medium text-sm ${
+                        message.role === "user"
+                          ? "text-blue-400"
+                          : "text-slate-400"
+                      }`}>
+                        {message.role === "user" ? "You" : "Assistant"}
+                      </div>
+                    </div>
+                    <div className="text-slate-300 whitespace-pre-wrap text-lg leading-relaxed">
+                      {message.content}
+                    </div>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="flex justify-center items-center py-6">
+                      <div className="flex items-center space-x-3 text-blue-500">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                      <span className="text-lg">Generating response...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4 pt-4 border-t border-slate-800">
+                <form onSubmit={handleSubmit} className="flex gap-3">
+                  <Input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Ask about your presentation..."
+                    className="flex-1 text-lg p-6 bg-slate-800 border-slate-700 text-slate-200 placeholder-slate-500 focus:border-blue-500/30 focus:ring-blue-500/20"
+                    disabled={isLoading}
+                  />
+                  <Button
+                    type="submit"
+                    disabled={isLoading || !input.trim()}
+                    className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 hover:text-blue-300 transition-all duration-300 px-8 hover:shadow-lg hover:shadow-blue-500/10 rounded-xl border border-blue-500/30 hover:border-blue-500/50"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Send className="h-5 w-5" />
+                    )}
+                  </Button>
+                </form>
+
+                {messages.length > 0 && (
+                  <Button
+                    onClick={generatePresentation}
+                    className="w-full bg-gradient-to-r from-blue-500/20 to-indigo-500/20 hover:from-blue-500/30 hover:to-indigo-500/30 text-blue-400 hover:text-blue-300 py-6 text-lg font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 rounded-xl border border-blue-500/30 hover:border-blue-500/50"
+                  >
+                    <Presentation className="h-6 w-6 mr-3" />
+                    Generate Presentation from Chat
+                  </Button>
+                )}
+              </div>
+            </Card>
+          </div>
+
+          {/* Right Side: Prompts/Presentation */}
+          <div className="w-[65%] space-y-8">
+            {slides.length > 0 ? (
+              <>
+                <div className="flex justify-between items-center bg-white/80 p-4 rounded-xl backdrop-blur-sm border border-slate-200 mb-6">
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm font-medium text-gray-500">
-                    Slide {currentSlide + 1} of {slides.length}
-                  </span>
+                  <div className="flex items-center space-x-2 px-4 py-2 bg-blue-50 rounded-lg border border-blue-100">
+                    <span className="text-sm font-medium text-slate-600">
+                      Slide {currentSlide + 1} of {slides.length}
+                    </span>
+                  </div>
                 </div>
                 <Button
                   onClick={downloadPPT}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-blue-500 hover:bg-blue-600 text-white border border-blue-400 hover:border-blue-500 transition-all duration-300 hover:shadow-lg hover:shadow-blue-200"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download PowerPoint
@@ -305,14 +396,15 @@ export default function DemoPage() {
               <div className={`
                 rounded-xl shadow-2xl p-16 aspect-[16/9] relative overflow-hidden
                 bg-gradient-to-br ${slides[currentSlide].bgColor}
-                transition-colors duration-500
+                transition-all duration-500 border border-indigo-500/10
               `}>
-                <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
+                <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-transparent via-transparent to-blue-200/30"></div>
                 <div className="absolute inset-0 flex items-center justify-between px-8 pointer-events-none">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-16 w-16 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md pointer-events-auto transition-all duration-200 text-white"
+                    className="h-16 w-16 rounded-full bg-white/80 hover:bg-blue-50 backdrop-blur-md pointer-events-auto transition-all duration-300 text-slate-600 border border-slate-200 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-100/50"
                     onClick={prevSlide}
                     disabled={currentSlide === 0}
                   >
@@ -321,7 +413,7 @@ export default function DemoPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-16 w-16 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md pointer-events-auto transition-all duration-200 text-white"
+                    className="h-16 w-16 rounded-full bg-white/80 hover:bg-blue-50 backdrop-blur-md pointer-events-auto transition-all duration-300 text-slate-600 border border-slate-200 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-100/50"
                     onClick={nextSlide}
                     disabled={currentSlide === slides.length - 1}
                   >
@@ -348,20 +440,20 @@ export default function DemoPage() {
                           ${isAnimating ? 'translate-x-10 opacity-0' : 'translate-x-0 opacity-100'}
                         `}
                       >
-                        <div className="w-3 h-3 rounded-full bg-white/80 flex-shrink-0 shadow-lg mt-2" />
-                        <p className="text-white/90 drop-shadow leading-relaxed">{point}</p>
+                        <div className="w-3 h-3 rounded-full bg-slate-700/80 flex-shrink-0 shadow-lg mt-2" />
+                        <p className="text-slate-700 drop-shadow-none leading-relaxed">{point}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-4 bg-black/20 px-6 py-3 rounded-full backdrop-blur-sm">
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-4 bg-white/90 px-6 py-3 rounded-full backdrop-blur-sm border border-slate-200">
                   {slides.map((_: any, index: number) => (
                     <button
                       key={index}
                       className={`
                         w-3 h-3 rounded-full transition-all duration-300
-                        ${index === currentSlide ? 'bg-white w-10' : 'bg-white/50 hover:bg-white/70'}
+                        ${index === currentSlide ? 'bg-blue-500 w-10' : 'bg-slate-200 hover:bg-blue-200'}
                       `}
                       onClick={() => {
                         if (!isAnimating) {
@@ -373,34 +465,51 @@ export default function DemoPage() {
                   ))}
                 </div>
               </div>
-            </>
-          ) : (
-            <div className="space-y-8">
-              <div className="text-center">
-                <h2 className="text-4xl font-bold text-gray-800">Choose a Presentation Template</h2>
-                <p className="mt-4 text-xl text-gray-600">Select from our curated prompts or create your own</p>
+              </>
+            ) : (
+              <div className="space-y-8">
+              <div className="text-center space-y-6 mb-12">
+                <div className="relative">
+                  <div className="absolute -inset-x-20 -top-20 h-44 bg-blue-100/50 blur-3xl rounded-full"></div>
+                  <h2 className="relative text-5xl font-bold bg-gradient-to-br from-slate-700 via-blue-600 to-slate-700 text-transparent bg-clip-text">
+                    Choose Your Presentation Style
+                  </h2>
+                  <p className="relative mt-6 text-xl text-slate-600">Select from our expertly crafted templates or create your own</p>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {prompts.map((prompt, index) => (
                   <Card
                     key={index}
-                    className="p-6 hover:shadow-xl transition-all duration-300 cursor-pointer group relative overflow-hidden"
+                    className="group relative overflow-hidden rounded-xl backdrop-blur-sm border border-slate-200 hover:border-blue-200 transition-all duration-500"
                     onClick={() => {}}
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-br ${prompt.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-                    <div className="relative z-10">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="text-xl font-semibold group-hover:text-white transition-colors duration-300">{prompt.category}</h3>
-                          <p className="text-sm text-gray-500 group-hover:text-white/80 transition-colors duration-300">{prompt.description}</p>
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/90 to-slate-50/90"></div>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${prompt.gradient} opacity-0 group-hover:opacity-60 transition-all duration-500`} />
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-transparent via-transparent to-indigo-500/10"></div>
+                    
+                    <div className="relative z-10 p-6 backdrop-blur-sm">
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="space-y-2">
+                          <h3 className="text-2xl font-bold bg-gradient-to-r from-slate-700 to-blue-600 text-transparent bg-clip-text group-hover:from-blue-600 group-hover:to-slate-700 transition-all duration-300">
+                            {prompt.category}
+                          </h3>
+                          <p className="text-sm text-slate-500 group-hover:text-blue-600 transition-colors duration-300">
+                            {prompt.description}
+                          </p>
                         </div>
-                        <Sparkles className="h-6 w-6 text-gray-400 group-hover:text-white transition-colors duration-300" />
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-blue-100 blur-xl rounded-full group-hover:bg-blue-200 transition-all duration-300"></div>
+                          <Sparkles className="relative h-6 w-6 text-blue-500 group-hover:text-blue-600 transition-colors duration-300" />
+                        </div>
                       </div>
-                      <p className="text-gray-600 group-hover:text-white/90 transition-colors duration-300 line-clamp-3">{prompt.prompt}</p>
+                      <p className="text-slate-500 group-hover:text-slate-700 transition-colors duration-300 line-clamp-3 leading-relaxed text-sm">
+                        {prompt.prompt}
+                      </p>
                       <Button
                         variant="ghost"
-                        className="mt-4 w-full border border-gray-200 group-hover:border-white/20 group-hover:text-white transition-all duration-300"
+                        className="mt-6 w-full bg-blue-50 hover:bg-blue-100 text-slate-600 hover:text-slate-700 border border-slate-200 hover:border-blue-200 transition-all duration-300 backdrop-blur-sm"
                         onClick={async (e) => {
                           e.stopPropagation();
                           if (isLoading) return;
@@ -492,77 +601,8 @@ export default function DemoPage() {
                 ))}
               </div>
             </div>
-          )}
-
-          {/* AI Chat Section */}
-          <Card className="p-8 shadow-xl bg-white/95 backdrop-blur-sm">
-            <div className="space-y-4 mb-6 max-h-[500px] overflow-y-auto">
-              {messages.length === 0 && (
-                <div className="text-center text-gray-500 py-12">
-                  <AlertCircle className="h-16 w-16 mx-auto mb-6 text-violet-400" />
-                  <p className="text-xl">Choose a template above or start your own conversation!</p>
-                </div>
-              )}
-              {messages.map((message: Message, index: number) => (
-                <div
-                  key={index}
-                  className={`p-6 rounded-lg ${
-                    message.role === "user"
-                      ? "bg-violet-100 ml-16"
-                      : "bg-gray-100 mr-16"
-                  } transform transition-all duration-200 hover:scale-[1.02]`}
-                >
-                  <div className="font-semibold mb-2 text-base text-gray-600">
-                    {message.role === "user" ? "You" : "Assistant"}
-                  </div>
-                  <div className="text-gray-800 whitespace-pre-wrap text-lg">
-                    {message.content}
-                  </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-center items-center py-6">
-                  <div className="flex items-center space-x-3 text-violet-600">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    <span className="text-lg">Generating response...</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <form onSubmit={handleSubmit} className="flex gap-3">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about your presentation or choose a template above..."
-                  className="flex-1 text-lg p-6"
-                  disabled={isLoading}
-                />
-                <Button
-                  type="submit"
-                  disabled={isLoading || !input.trim()}
-                  className="bg-violet-600 hover:bg-violet-700 text-white transition-colors px-8"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Send className="h-5 w-5" />
-                  )}
-                </Button>
-              </form>
-
-              {messages.length > 0 && (
-                <Button
-                  onClick={generatePresentation}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-lg font-semibold"
-                >
-                  <Presentation className="h-6 w-6 mr-3" />
-                  Generate Presentation from Chat
-                </Button>
-              )}
-            </div>
-          </Card>
+            )}
+          </div>
         </div>
       </MaxWidthWrapper>
     </div>
