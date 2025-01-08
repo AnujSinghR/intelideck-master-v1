@@ -24,7 +24,7 @@ const NavbarLarge = () => {
           alt="logo"
           className="rounded-full"
         />
-        <span className="text-lg font-semibold">SlideGen</span>
+        <span className="text-lg font-semibold">Intelideck</span>
       </Link>
 
       <div className="space-y-2">
