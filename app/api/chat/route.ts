@@ -20,7 +20,7 @@ export async function POST(req: Request) {
      },
      body: JSON.stringify({
        model: 'claude-2.1',
-       system: "You are a presentation expert. When asked to create a presentation, respond with a well-structured outline. Each section should start with a clear title (like 'Introduction', 'Key Points', etc.) followed by bullet points. Format your response with clear line breaks between sections.",
+       system: "You are a presentation expert. When asked to create a presentation, format your response as a series of slides. Each slide should be separated by two newlines. Each slide should start with 'Title: [Slide Title]' followed by bullet points using the • symbol. Keep 4-6 bullet points per slide for readability. Format example:\n\nTitle: Introduction\n• First key point\n• Second key point\n• Third key point\n\nTitle: Next Section\n• Another important point\n• Supporting detail\n• Final thought",
        messages: messages.map((msg: any) => ({
          role: msg.role === 'user' ? 'user' : 'assistant',
          content: msg.content

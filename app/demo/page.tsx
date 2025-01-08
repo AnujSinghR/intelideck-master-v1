@@ -125,12 +125,22 @@ export default function DemoPage() {
         const slideTexts: string[] = data.text.split('\n\n').filter((text: string) => text.trim());
         const parsedSlides = slideTexts.map((slideText: string, index: number) => {
           const lines: string[] = slideText.split('\n').filter((line: string) => line.trim());
-          const title = lines[0].replace(/^[IVX]+\.\s*/, '');
+          const title = lines[0]
+            .replace(/^[IVX]+\.\s*/, '')
+            .replace(/^Title:?\s*/i, '')
+            .replace(/^Slide\s*\d*:?\s*/i, '')
+            .trim();
           const content = lines.slice(1)
-            .map((line: string) => line.trim())
-            .map((line: string) => line.replace(/^[A-Z]\.\s*/, ''))
-            .map((line: string) => line.replace(/^\d+\.\s*/, ''))
-            .map((line: string) => line.replace(/^[-•]\s*/, ''));
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .map(line => line
+              .replace(/^[-•*]\s*/, '')
+              .replace(/^\d+\.\s*/, '')
+              .replace(/^[A-Z]\)\s*/, '')
+              .replace(/^[a-z]\)\s*/, '')
+              .trim()
+            )
+            .filter(line => line.length > 0);
 
           const colorIndex = index % colorCombos.length;
 
@@ -199,12 +209,22 @@ export default function DemoPage() {
     const slideTexts: string[] = text.split('\n\n').filter((text: string) => text.trim());
     const parsedSlides = slideTexts.map((slideText: string, index: number) => {
       const lines: string[] = slideText.split('\n').filter((line: string) => line.trim());
-      const title = lines[0].replace(/^[IVX]+\.\s*/, '');
+      const title = lines[0]
+        .replace(/^[IVX]+\.\s*/, '')
+        .replace(/^Title:?\s*/i, '')
+        .replace(/^Slide\s*\d*:?\s*/i, '')
+        .trim();
       const content = lines.slice(1)
-        .map((line: string) => line.trim())
-        .map((line: string) => line.replace(/^[A-Z]\.\s*/, ''))
-        .map((line: string) => line.replace(/^\d+\.\s*/, ''))
-        .map((line: string) => line.replace(/^[-•]\s*/, ''));
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .map(line => line
+          .replace(/^[-•*]\s*/, '')
+          .replace(/^\d+\.\s*/, '')
+          .replace(/^[A-Z]\)\s*/, '')
+          .replace(/^[a-z]\)\s*/, '')
+          .trim()
+        )
+        .filter(line => line.length > 0);
 
       const colorIndex = index % colorCombos.length;
 
@@ -433,18 +453,18 @@ export default function DemoPage() {
                   <h2 className={`text-5xl md:text-6xl font-bold text-center mb-8 ${slides[currentSlide].textColor} drop-shadow-lg line-clamp-2`}>
                     {slides[currentSlide].title}
                   </h2>
-                  <div className="space-y-6 overflow-y-auto max-h-[60vh] scrollbar-hide pr-4 pb-12">
+                  <div className="space-y-6 overflow-y-auto max-h-[55vh] scrollbar-hide pr-4 pb-12">
                     {slides[currentSlide].content.map((point: string, index: number) => (
                       <div
                         key={index}
                         className={`
-                          flex items-start space-x-4 text-lg md:text-xl ${slides[currentSlide].textColor}
+                          flex items-start space-x-6 text-lg md:text-xl ${slides[currentSlide].textColor}
                           transform transition-all duration-500 delay-${index * 100}
                           ${isAnimating ? 'translate-x-10 opacity-0' : 'translate-x-0 opacity-100'}
                         `}
                       >
-                        <div className="w-3 h-3 rounded-full bg-slate-700/80 flex-shrink-0 shadow-lg mt-2" />
-                        <p className="text-slate-700 drop-shadow-none leading-relaxed">{point}</p>
+                        <div className="w-4 h-4 rounded-full bg-slate-700/80 flex-shrink-0 shadow-lg mt-3" />
+                        <p className="text-slate-700 drop-shadow-none leading-relaxed font-medium">{point}</p>
                       </div>
                     ))}
                   </div>
@@ -518,7 +538,14 @@ export default function DemoPage() {
                           if (isLoading) return;
                           
                           setIsLoading(true);
-                          const userMessage = { role: "user", content: `${prompt.prompt} Format the presentation with clear sections and bullet points for each slide.` };
+                          const userMessage = { role: "user", content: `${prompt.prompt} Format the presentation with the following structure:
+1. Each slide should have a clear, concise title
+2. Content should be in bullet points
+3. Each point should be a complete thought
+4. Keep points focused and impactful
+5. Use consistent formatting throughout
+6. Limit to 4-6 points per slide for better readability
+Format as "Title: [title]" followed by bullet points using • symbol.` };
                           
                           try {
                             const response = await fetch('/api/chat', {
@@ -550,12 +577,22 @@ export default function DemoPage() {
                             const slideTexts = data.text.split('\n\n').filter((text: string) => text.trim());
                             const parsedSlides = slideTexts.map((slideText: string, index: number) => {
                               const lines = slideText.split('\n').filter((line: string) => line.trim());
-                              const title = lines[0].replace(/^[IVX]+\.\s*/, '').replace(/^Title:?\s*/i, '').replace(/^Slide\s*\d*:?\s*/i, '');
+                              const title = lines[0]
+                                .replace(/^[IVX]+\.\s*/, '')
+                                .replace(/^Title:?\s*/i, '')
+                                .replace(/^Slide\s*\d*:?\s*/i, '')
+                                .trim();
                               const content = lines.slice(1)
                                 .map(line => line.trim())
                                 .filter(line => line.length > 0)
-                                .map(line => line.replace(/^[-•*]\s*/, ''))
-                                .map(line => line.replace(/^\d+\.\s*/, ''));
+                                .map(line => line
+                                  .replace(/^[-•*]\s*/, '')
+                                  .replace(/^\d+\.\s*/, '')
+                                  .replace(/^[A-Z]\)\s*/, '')
+                                  .replace(/^[a-z]\)\s*/, '')
+                                  .trim()
+                                )
+                                .filter(line => line.length > 0);
 
                               const colorIndex = index % colorCombos.length;
                               return {

@@ -60,15 +60,6 @@ const NavbarLarge = () => {
           <span className="text-gray-300 group-hover:text-white transition-colors">PDF Reskine</span>
         </Link>
       </div>
-
-      <div className="absolute bottom-8 left-0 w-full px-4">
-        <Link href="/generate">
-          <button className="w-full py-3 px-4 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2">
-            <Wand2 className="w-5 h-5" />
-            Sign Up
-          </button>
-        </Link>
-      </div>
     </nav>
   );
 };

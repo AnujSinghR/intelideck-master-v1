@@ -1,6 +1,6 @@
 "use client";
 
-import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Upload } from "lucide-react";
 import { useState, useRef } from "react";
 import { useUpload } from "./UploadContext";
@@ -109,9 +109,10 @@ export function FileUploadModal({
     >
       <DialogContent 
         className="sm:max-w-[475px] p-0 bg-gradient-to-br from-indigo-600 to-purple-700 border-0 shadow-2xl"
-        aria-labelledby="upload-dialog-title"
       >
-        <DialogTitle id="upload-dialog-title" className="sr-only">{title}</DialogTitle>
+        <DialogHeader>
+          <DialogTitle className="text-white px-6 pt-6">{title}</DialogTitle>
+        </DialogHeader>
         <div
           className={`flex flex-col items-center justify-center p-12 text-white border-2 border-dashed border-white/40 m-4 rounded-xl transition-all duration-300 ${
             isUploading ? "cursor-wait" : "cursor-pointer hover:border-white/60"
