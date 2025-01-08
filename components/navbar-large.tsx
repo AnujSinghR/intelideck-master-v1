@@ -45,19 +45,11 @@ const NavbarLarge = () => {
         </Link>
 
         <Link 
-          href="/ai-chat" 
-          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 rounded-lg transition-all group"
-        >
-          <MessageSquare className="w-5 h-5 text-gray-400 group-hover:text-violet-400 transition-colors" />
-          <span className="text-gray-300 group-hover:text-white transition-colors">AI Chat</span>
-        </Link>
-
-        <Link 
           href="/pptx" 
           className="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 rounded-lg transition-all group"
         >
           <FileSpreadsheet className="w-5 h-5 text-gray-400 group-hover:text-violet-400 transition-colors" />
-          <span className="text-gray-300 group-hover:text-white transition-colors">PPT Reskin</span>
+          <span className="text-gray-300 group-hover:text-white transition-colors">PPT Reskine</span>
         </Link>
 
         <Link 
@@ -65,7 +57,7 @@ const NavbarLarge = () => {
           className="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 rounded-lg transition-all group"
         >
           <FileText className="w-5 h-5 text-gray-400 group-hover:text-violet-400 transition-colors" />
-          <span className="text-gray-300 group-hover:text-white transition-colors">PDF Reskin</span>
+          <span className="text-gray-300 group-hover:text-white transition-colors">PDF Reskine</span>
         </Link>
       </div>
 
