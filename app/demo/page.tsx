@@ -106,8 +106,19 @@ export default function DemoPage() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMessage]);
+    // Display message shows only user input
+    const displayMessage = { role: "user", content: input };
+    // API message includes formatting instructions
+    const apiMessage = { role: "user", content: `${input}\n\nFormat the presentation with the following structure:
+1. Each slide should have a clear, concise title
+2. Content should be in bullet points
+3. Each point should be a complete thought
+4. Keep points focused and impactful
+5. Use consistent formatting throughout
+6. Limit to 4-6 points per slide for better readability
+Format as "Title: [title]" followed by bullet points using • symbol.` };
+    
+    setMessages((prev) => [...prev, displayMessage]);
     setInput("");
     setIsLoading(true);
 
@@ -118,7 +129,9 @@ export default function DemoPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: [...messages, userMessage]
+          messages: [...messages.map(msg => 
+            msg.role === "user" ? { role: "user", content: msg.content.split('\n\n')[0] } : msg
+          ), apiMessage]
         }),
       });
 
@@ -135,9 +148,12 @@ export default function DemoPage() {
 
       setMessages((prev) => [...prev, { role: "assistant", content: data.text }]);
       
-      // Parse presentation content if it contains slides
-      if (data.text.includes('Title Slide') || data.text.includes('Slide')) {
-        const slideTexts: string[] = data.text.split('\n\n').filter((text: string) => text.trim());
+      // Parse presentation content
+      const slideTexts: string[] = data.text.split('\n\n').filter((text: string) => 
+        text.trim() && (text.toLowerCase().includes('title:') || text.includes('•'))
+      );
+      
+      if (slideTexts.length > 0) {
         const parsedSlides = slideTexts.map((slideText: string, index: number) => {
           const lines: string[] = slideText.split('\n').filter((line: string) => line.trim());
           const title = lines[0]
@@ -211,17 +227,20 @@ export default function DemoPage() {
     }
 
     const text = lastAssistantMessage.content;
-    if (!text.includes('Title Slide') && !text.includes('Slide')) {
+
+    // Parse presentation content and ensure there's content to parse
+    const slideTexts: string[] = text.split('\n\n').filter((text: string) => 
+      text.trim() && (text.toLowerCase().includes('title:') || text.includes('•'))
+    );
+    
+    if (slideTexts.length === 0) {
       toast({
-        title: "No presentation format detected",
-        description: "Please ask the AI to generate a presentation outline first.",
+        title: "No presentation content found",
+        description: "The AI response doesn't contain properly formatted slides. Try asking a question about creating a presentation.",
         variant: "destructive",
       });
       return;
     }
-
-    // Parse presentation content
-    const slideTexts: string[] = text.split('\n\n').filter((text: string) => text.trim());
     const parsedSlides = slideTexts.map((slideText: string, index: number) => {
       const lines: string[] = slideText.split('\n').filter((line: string) => line.trim());
       const title = lines[0]
@@ -606,7 +625,10 @@ export default function DemoPage() {
                               p === thisPrompt ? {...p, isLoading: true} : p
                             )
                           );
-                          const userMessage = { role: "user", content: `${prompt.prompt} Format the presentation with the following structure:
+                          // Display message shows only the prompt
+                          const displayMessage = { role: "user", content: prompt.prompt };
+                          // API message includes formatting instructions
+                          const apiMessage = { role: "user", content: `${prompt.prompt} Format the presentation with the following structure:
 1. Each slide should have a clear, concise title
 2. Content should be in bullet points
 3. Each point should be a complete thought
@@ -622,7 +644,7 @@ Format as "Title: [title]" followed by bullet points using • symbol.` };
                                 'Content-Type': 'application/json',
                               },
                               body: JSON.stringify({
-                                messages: [userMessage]
+                                messages: [apiMessage]
                               }),
                             });
 
@@ -635,14 +657,16 @@ Format as "Title: [title]" followed by bullet points using • symbol.` };
                               throw new Error('Invalid response format');
                             }
 
-                            // Update messages
+                            // Update messages with display version
                             setMessages([
-                              userMessage,
+                              displayMessage,
                               { role: "assistant", content: data.text }
                             ]);
 
                             // Generate presentation
-                            const slideTexts = data.text.split('\n\n').filter((text: string) => text.trim());
+                            const slideTexts = data.text.split('\n\n').filter((text: string) => 
+                              text.trim() && (text.toLowerCase().includes('title:') || text.includes('•'))
+                            );
                             const parsedSlides = slideTexts.map((slideText: string, index: number) => {
                               const lines = slideText.split('\n').filter((line: string) => line.trim());
                               const title = lines[0]
