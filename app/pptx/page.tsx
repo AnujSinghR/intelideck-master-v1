@@ -1,241 +1,150 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { extractPptData, SlideData, PPTExtractionError, validateFile } from '@/lib/pptExtractor';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { PPTViewer } from "../../components/file-upload/PPTViewer";
+import { PPTReskineExtractor } from "../../components/file-upload/PPTReskineExtractor";
+import { PPTUploadProvider } from "../../components/file-upload/PPTUploadContext";
+import { PPTUpload } from "../../components/file-upload/PPTUpload";
+import { useState, useEffect } from "react";
+import { FileText, Eye, Keyboard } from "lucide-react";
 
-interface ProcessedSlide extends SlideData {
-  slideNumber: number;
-  paragraphs: string[];
-}
+export default function PPTXViewerPage() {
+  const [activeTab, setActiveTab] = useState<'view' | 'reskine'>('view');
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
-export default function PPTXPage() {
-  const [file, setFile] = useState<File | null>(null);
-  const [processedOutput, setProcessedOutput] = useState<ProcessedSlide[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState<number>(0);
-
+  // Handle keyboard shortcuts
   useEffect(() => {
-    return () => {
-      processedOutput.forEach(slide => {
-        slide.images.forEach(URL.revokeObjectURL);
-      });
-    };
-  }, [processedOutput]);
-
-  const resetState = useCallback(() => {
-    setError(null);
-    setProgress(0);
-    processedOutput.forEach(slide => {
-      slide.images.forEach(URL.revokeObjectURL);
-    });
-    setProcessedOutput([]);
-    setFile(null);
-  }, [processedOutput]);
-
-  const processSlideData = (data: SlideData[]): ProcessedSlide[] => {
-    return data.map((slide, index) => {
-      // Split text into paragraphs for better organization
-      const paragraphs = slide.text
-        .split(/(?<=\.|\?|\!)\s+/)
-        .filter(p => p.trim().length > 0);
-
-      return {
-        ...slide,
-        slideNumber: index + 1,
-        paragraphs
-      };
-    });
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const uploadedFile = e.target.files?.[0];
-    if (!uploadedFile) return;
-
-    try {
-      resetState();
-      setFile(uploadedFile);
-      setLoading(true);
-      
-      // Validate file first
-      validateFile(uploadedFile);
-      
-      // Simulate progress
-      const progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 10, 90));
-      }, 200);
-
-      const extractedData = await extractPptData(uploadedFile);
-      const processed = processSlideData(extractedData);
-      setProcessedOutput(processed);
-      
-      clearInterval(progressInterval);
-      setProgress(100);
-    } catch (err) {
-      if (err instanceof PPTExtractionError) {
-        setError(err.message);
-      } else {
-        setError('An unexpected error occurred. Please try again.');
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === "?") {
+        e.preventDefault();
+        setShowShortcuts(prev => !prev);
+      } else if (e.key === "Escape") {
+        setShowShortcuts(false);
+      } else if (e.ctrlKey && e.key === "e") {
+        e.preventDefault();
+        setActiveTab(prev => prev === 'view' ? 'reskine' : 'view');
       }
-      console.error('File processing error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, []);
+
+  const shortcuts = [
+    { key: "Ctrl + E", description: "Toggle between view/reskine" },
+    { key: "?", description: "Show/hide shortcuts" },
+    { key: "Esc", description: "Close shortcuts" }
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-violet-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-700 via-blue-600 to-indigo-700 mb-4">
-            PowerPoint Content Viewer
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Upload your PowerPoint presentation to view its content in a beautifully organized format
-          </p>
-        </div>
-
-        {/* Upload Section */}
-        <Card className="bg-white/80 backdrop-blur-sm p-8 mb-8 hover:shadow-xl transition-shadow duration-300">
-          <div className="space-y-4">
-            <label 
-              htmlFor="pptx-upload"
-              className="block text-lg font-medium text-gray-700 text-center"
-            >
-              Choose a PowerPoint file (.pptx)
-            </label>
-            <input
-              id="pptx-upload"
-              type="file"
-              accept=".pptx"
-              className="hidden"
-              onChange={handleFileUpload}
-              aria-label="Upload PowerPoint file"
-            />
-            <div className="flex flex-col items-center gap-4">
-              <Button
-                onClick={() => document.getElementById('pptx-upload')?.click()}
-                className="w-full max-w-md bg-gradient-to-r from-violet-600 via-blue-600 to-indigo-600 hover:from-violet-500 hover:via-blue-500 hover:to-indigo-500"
-              >
-                Upload PowerPoint File
-              </Button>
-              <p className="text-sm text-gray-500">Maximum file size: 50MB</p>
-            </div>
-          </div>
-        </Card>
-
-        {/* Error Display */}
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg mb-8" role="alert">
-            <div className="flex items-center">
+    <PPTUploadProvider>
+      <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-orange-100 via-white to-amber-100">
+        <div className="container mx-auto py-4 px-2 sm:px-4 lg:px-6">
+          {/* Header Section */}
+          <div className="max-w-[1600px] mx-auto">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+              <div className="mb-4 md:mb-0">
+                <div className="flex items-center space-x-3 mb-2">
+                  <svg className="w-8 h-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 bg-clip-text text-transparent sm:text-4xl">
+                    PowerPoint Viewer
+                  </h1>
+                </div>
+                <p className="text-lg text-gray-600 max-w-2xl leading-relaxed">
+                  Advanced PowerPoint viewer with text and image extraction, and template generation.
+                </p>
+              </div>
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
+                <PPTUpload />
               </div>
-              <p className="ml-3 text-sm text-red-700">{error}</p>
-              <button
-                className="ml-auto"
-                onClick={() => setError(null)}
-                aria-label="Dismiss error"
-              >
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Loading Progress */}
-        {loading && (
-          <Card className="p-6 mb-8">
-            <div className="space-y-4">
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-violet-600 via-blue-600 to-indigo-600 transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <p className="text-center text-indigo-600 font-semibold animate-pulse">
-                Processing presentation... {progress}%
-              </p>
-            </div>
-          </Card>
-        )}
-
-        {/* Content Display */}
-        {processedOutput.length > 0 && !loading && (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-3xl font-bold text-gray-800">
-                Presentation Content
-              </h2>
-              <Button
-                onClick={resetState}
-                variant="outline"
-                className="hover:bg-slate-100"
-              >
-                Clear Content
-              </Button>
             </div>
 
-            <div className="grid gap-8">
-              {processedOutput.map((slide) => (
-                <Card 
-                  key={slide.slideNumber}
-                  className="overflow-hidden hover:shadow-xl transition-shadow duration-300"
-                >
-                  {/* Slide Header */}
-                  <div className="bg-gradient-to-r from-slate-50 to-gray-50 border-b p-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xl font-semibold text-gray-800">
-                        Slide {slide.slideNumber}
-                      </h3>
-                      <span className="px-3 py-1 bg-white rounded-full text-sm text-gray-600 shadow-sm">
-                        {slide.images.length} {slide.images.length === 1 ? 'image' : 'images'}
-                      </span>
+            {/* Main Content */}
+            <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-orange-50 transition-all duration-300 hover:shadow-orange-100/50">
+              {/* Enhanced Toolbar */}
+              <div className="border-b border-orange-100 bg-gradient-to-r from-white to-orange-50/30 px-4 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-1 shadow-sm border border-orange-50">
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => setActiveTab('view')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 flex items-center space-x-2 ${
+                            activeTab === 'view'
+                              ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                              : "text-gray-600 hover:bg-orange-50"
+                          }`}
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span>View PPTX</span>
+                        </button>
+                        <button
+                          onClick={() => setActiveTab('reskine')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 flex items-center space-x-2 ${
+                            activeTab === 'reskine'
+                              ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                              : "text-gray-600 hover:bg-orange-50"
+                          }`}
+                        >
+                          <FileText className="h-4 w-4" />
+                          <span>Reskine</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Slide Content */}
-                  <div className="p-6 space-y-6">
-                    {/* Text Content */}
-                    {slide.paragraphs.length > 0 && (
-                      <div className="prose max-w-none">
-                        {slide.paragraphs.map((paragraph, idx) => (
-                          <p key={idx} className="text-gray-700 leading-relaxed">
-                            {paragraph}
-                          </p>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Image Gallery */}
-                    {slide.images.length > 0 && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {slide.images.map((img, idx) => (
-                          <div key={idx} className="relative group rounded-lg overflow-hidden">
-                            <img
-                              src={img}
-                              alt={`Content from slide ${slide.slideNumber}`}
-                              className="w-full h-auto object-cover transform transition-transform duration-300 group-hover:scale-105"
-                              loading="lazy"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => setShowShortcuts(prev => !prev)}
+                      className="hidden sm:flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <Keyboard className="h-4 w-4" />
+                      <span>Keyboard Shortcuts (?)</span>
+                    </button>
                   </div>
-                </Card>
-              ))}
+                </div>
+              </div>
+
+              {/* Keyboard Shortcuts Modal */}
+              {showShortcuts && (
+                <div className="absolute top-24 right-8 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-80">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-lg font-semibold">Keyboard Shortcuts</h3>
+                    <button
+                      onClick={() => setShowShortcuts(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {shortcuts.map(({ key, description }) => (
+                      <div key={key} className="flex justify-between items-center">
+                        <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">{key}</kbd>
+                        <span className="text-sm text-gray-600">{description}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Content Area */}
+              <div className="h-[calc(100vh-12rem)]">
+                {activeTab === 'view' ? (
+                  <div className="h-full">
+                    <PPTViewer className="h-full" />
+                  </div>
+                ) : (
+                  <div className="h-full overflow-y-auto p-4 custom-scrollbar bg-gradient-to-br from-white to-orange-50/20">
+                    <PPTReskineExtractor />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
-    </div>
+    </PPTUploadProvider>
   );
 }

@@ -21,6 +21,7 @@ const NavbarLarge = () => {
           <Link href="/demo" className="hover:text-violet-600 transition-colors">Demo</Link>
           <Link href="/ai-chat" className="hover:text-violet-600 transition-colors">AI Chat</Link>
           <Link href="/pptx" className="hover:text-violet-600 transition-colors">PPT X Tractor</Link>
+          <Link href="/pdf-viewer" className="hover:text-violet-600 transition-colors">PDF REskin</Link>
         </div>
       </div>
       <div className="hidden md:flex space-x-4 items-center">

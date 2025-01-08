@@ -5,10 +5,11 @@ import { useState, useEffect } from "react";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
-import { ChevronLeft, ChevronRight, Download, Loader2, AlertCircle, Send, Presentation } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Loader2, AlertCircle, Send, Presentation, Sparkles } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import pptxgen from "pptxgenjs";
 
+// Previous interfaces remain the same
 interface Slide {
   title: string;
   content: string[];
@@ -25,6 +26,45 @@ interface ChatResponse {
   text: string;
   error?: string;
 }
+
+const prompts = [
+  {
+    category: "Digital Marketing",
+    description: "Trends & Campaigns",
+    prompt: "Create a comprehensive presentation about current digital marketing trends, campaign insights, and action plans. Include key statistics, emerging technologies, and strategic recommendations.",
+    gradient: "from-blue-500 to-violet-600",
+  },
+  {
+    category: "SEO Strategy",
+    description: "Website Optimization",
+    prompt: "Create a detailed SEO strategy presentation covering current performance analysis, technical improvements, content strategy, and implementation plans for better search rankings.",
+    gradient: "from-emerald-500 to-teal-600",
+  },
+  {
+    category: "Market Analysis",
+    description: "Competitive Research",
+    prompt: "Create a market analysis presentation including industry overview, competitor analysis, SWOT analysis, and strategic recommendations for market positioning.",
+    gradient: "from-orange-500 to-red-600",
+  },
+  {
+    category: "Social Media",
+    description: "Platform Strategy",
+    prompt: "Create a social media strategy presentation covering platform analysis, content planning, engagement tactics, and growth strategies across different social networks.",
+    gradient: "from-pink-500 to-rose-600",
+  },
+  {
+    category: "E-commerce",
+    description: "Growth & Retention",
+    prompt: "Create an e-commerce strategy presentation focusing on customer analysis, retention strategies, growth opportunities, and implementation plans for increasing sales.",
+    gradient: "from-purple-500 to-indigo-600",
+  },
+  {
+    category: "Product Launch",
+    description: "Go-to-Market Strategy",
+    prompt: "Create a product launch strategy presentation including product overview, marketing approach, launch timeline, and success metrics for a successful market entry.",
+    gradient: "from-cyan-500 to-blue-600",
+  }
+];
 
 const colorCombos = [
   { bg: "from-violet-500 to-purple-600", text: "text-white" },
@@ -46,6 +86,7 @@ export default function DemoPage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Previous functions remain the same
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -196,26 +237,43 @@ export default function DemoPage() {
       const bgColor = slide.bgColor.split(' ')[1].replace('to-', '');
       pptSlide.background = { color: bgColor.replace('-600', '') };
 
+      // Add title with dynamic font size based on length
+      const titleFontSize = slide.title.length > 50 ? 32 : slide.title.length > 30 ? 36 : 40;
       pptSlide.addText(slide.title, {
         x: '5%',
         y: '5%',
         w: '90%',
-        h: '15%',
-        fontSize: 44,
+        h: '20%',
+        fontSize: titleFontSize,
         color: 'FFFFFF',
         bold: true,
         align: 'center',
+        valign: 'middle',
+        wrap: true,
       });
 
+      // Calculate content height and spacing
+      const contentStartY = 30;
+      const availableHeight = 100 - contentStartY;
+      const pointHeight = Math.min(10, availableHeight / Math.max(slide.content.length, 1));
+      
+      // Calculate font size based on content length
+      const maxPointLength = Math.max(...slide.content.map(p => p.length), 1);
+      const fontSize = Math.max(16, Math.min(20, 400 / maxPointLength));
+
+      // Add points with calculated spacing
       slide.content.forEach((point, idx) => {
         pptSlide.addText(point, {
           x: '10%',
-          y: `${25 + (idx * 12)}%`,
+          y: `${contentStartY + (idx * pointHeight)}%`,
           w: '80%',
-          h: '10%',
-          fontSize: 24,
+          h: `${pointHeight}%`,
+          fontSize: fontSize,
           color: 'FFFFFF',
           bullet: true,
+          valign: 'middle',
+          wrap: true,
+          breakLine: true,
         });
       });
     });
@@ -272,31 +330,32 @@ export default function DemoPage() {
                 </div>
                 
                 <div className={`
-                  h-full flex flex-col justify-center relative z-10
+                  h-full flex flex-col justify-start pt-8 relative z-10
                   transform transition-transform duration-500 ease-out
                   ${isAnimating ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}
+                  overflow-hidden
                 `}>
-                  <h2 className={`text-7xl font-bold text-center mb-16 ${slides[currentSlide].textColor} drop-shadow-lg`}>
+                  <h2 className={`text-5xl md:text-6xl font-bold text-center mb-8 ${slides[currentSlide].textColor} drop-shadow-lg line-clamp-2`}>
                     {slides[currentSlide].title}
                   </h2>
-                  <div className="space-y-10">
+                  <div className="space-y-6 overflow-y-auto max-h-[60vh] scrollbar-hide pr-4 pb-12">
                     {slides[currentSlide].content.map((point: string, index: number) => (
                       <div
                         key={index}
                         className={`
-                          flex items-center space-x-6 text-2xl ${slides[currentSlide].textColor}
+                          flex items-start space-x-4 text-lg md:text-xl ${slides[currentSlide].textColor}
                           transform transition-all duration-500 delay-${index * 100}
                           ${isAnimating ? 'translate-x-10 opacity-0' : 'translate-x-0 opacity-100'}
                         `}
                       >
-                        <div className="w-4 h-4 rounded-full bg-white/80 flex-shrink-0 shadow-lg" />
-                        <p className="text-white/90 drop-shadow">{point}</p>
+                        <div className="w-3 h-3 rounded-full bg-white/80 flex-shrink-0 shadow-lg mt-2" />
+                        <p className="text-white/90 drop-shadow leading-relaxed">{point}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-4">
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-4 bg-black/20 px-6 py-3 rounded-full backdrop-blur-sm">
                   {slides.map((_: any, index: number) => (
                     <button
                       key={index}
@@ -316,9 +375,122 @@ export default function DemoPage() {
               </div>
             </>
           ) : (
-            <div className="text-center py-12">
-              <h2 className="text-3xl font-bold text-gray-800">No presentation yet</h2>
-              <p className="mt-4 text-xl text-gray-600">Start a conversation below to generate your presentation</p>
+            <div className="space-y-8">
+              <div className="text-center">
+                <h2 className="text-4xl font-bold text-gray-800">Choose a Presentation Template</h2>
+                <p className="mt-4 text-xl text-gray-600">Select from our curated prompts or create your own</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {prompts.map((prompt, index) => (
+                  <Card
+                    key={index}
+                    className="p-6 hover:shadow-xl transition-all duration-300 cursor-pointer group relative overflow-hidden"
+                    onClick={() => {}}
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-br ${prompt.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                    <div className="relative z-10">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-xl font-semibold group-hover:text-white transition-colors duration-300">{prompt.category}</h3>
+                          <p className="text-sm text-gray-500 group-hover:text-white/80 transition-colors duration-300">{prompt.description}</p>
+                        </div>
+                        <Sparkles className="h-6 w-6 text-gray-400 group-hover:text-white transition-colors duration-300" />
+                      </div>
+                      <p className="text-gray-600 group-hover:text-white/90 transition-colors duration-300 line-clamp-3">{prompt.prompt}</p>
+                      <Button
+                        variant="ghost"
+                        className="mt-4 w-full border border-gray-200 group-hover:border-white/20 group-hover:text-white transition-all duration-300"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (isLoading) return;
+                          
+                          setIsLoading(true);
+                          const userMessage = { role: "user", content: `${prompt.prompt} Format the presentation with clear sections and bullet points for each slide.` };
+                          
+                          try {
+                            const response = await fetch('/api/chat', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({
+                                messages: [userMessage]
+                              }),
+                            });
+
+                            if (!response.ok) {
+                              throw new Error('Failed to generate response');
+                            }
+
+                            const data = await response.json();
+                            if (!data.text) {
+                              throw new Error('Invalid response format');
+                            }
+
+                            // Update messages
+                            setMessages([
+                              userMessage,
+                              { role: "assistant", content: data.text }
+                            ]);
+
+                            // Generate presentation
+                            const slideTexts = data.text.split('\n\n').filter((text: string) => text.trim());
+                            const parsedSlides = slideTexts.map((slideText: string, index: number) => {
+                              const lines = slideText.split('\n').filter((line: string) => line.trim());
+                              const title = lines[0].replace(/^[IVX]+\.\s*/, '').replace(/^Title:?\s*/i, '').replace(/^Slide\s*\d*:?\s*/i, '');
+                              const content = lines.slice(1)
+                                .map(line => line.trim())
+                                .filter(line => line.length > 0)
+                                .map(line => line.replace(/^[-•*]\s*/, ''))
+                                .map(line => line.replace(/^\d+\.\s*/, ''));
+
+                              const colorIndex = index % colorCombos.length;
+                              return {
+                                title,
+                                content,
+                                bgColor: colorCombos[colorIndex].bg,
+                                textColor: colorCombos[colorIndex].text
+                              };
+                            });
+
+                            if (parsedSlides.length > 0) {
+                              setSlides(parsedSlides);
+                              setCurrentSlide(0);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            } else {
+                              throw new Error('Could not generate presentation slides');
+                            }
+                          } catch (error: any) {
+                            console.error("Error:", error);
+                            toast({
+                              title: "Error",
+                              description: error.message || "Failed to generate presentation. Please try again.",
+                              variant: "destructive",
+                            });
+                            setMessages([]);
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <div className="flex items-center space-x-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Generating...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <Sparkles className="h-4 w-4" />
+                            <span>Generate Presentation</span>
+                          </div>
+                        )}
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
 
@@ -328,7 +500,7 @@ export default function DemoPage() {
               {messages.length === 0 && (
                 <div className="text-center text-gray-500 py-12">
                   <AlertCircle className="h-16 w-16 mx-auto mb-6 text-violet-400" />
-                  <p className="text-xl">Start a conversation about your presentation!</p>
+                  <p className="text-xl">Choose a template above or start your own conversation!</p>
                 </div>
               )}
               {messages.map((message: Message, index: number) => (
@@ -363,7 +535,7 @@ export default function DemoPage() {
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about your presentation..."
+                  placeholder="Ask about your presentation or choose a template above..."
                   className="flex-1 text-lg p-6"
                   disabled={isLoading}
                 />
