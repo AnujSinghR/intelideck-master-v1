@@ -1,15 +1,14 @@
 "use client";
 
 import { PDFViewer } from "../../components/file-upload/PDFViewer";
-import { PDFTextExtractor } from "../../components/file-upload/PDFTextExtractor";
-import { PDFImageExtractor } from "../../components/file-upload/PDFImageExtractor";
+import { PDFReskineExtractor } from "../../components/file-upload/PDFReskineExtractor";
 import { UploadProvider } from "../../components/file-upload/UploadContext";
 import FileUploadExample from "../../components/file-upload/FileUploadExample";
 import { useState, useEffect } from "react";
-import { FileText, Eye, Keyboard, Image } from "lucide-react";
+import { FileText, Eye, Keyboard } from "lucide-react";
 
 export default function PDFViewerPage() {
-  const [activeTab, setActiveTab] = useState<'view' | 'text' | 'images'>('view');
+  const [activeTab, setActiveTab] = useState<'view' | 'reskine'>('view');
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   // Handle keyboard shortcuts
@@ -22,7 +21,7 @@ export default function PDFViewerPage() {
         setShowShortcuts(false);
       } else if (e.ctrlKey && e.key === "e") {
         e.preventDefault();
-        setActiveTab(prev => prev === 'view' ? 'text' : prev === 'text' ? 'images' : 'view');
+        setActiveTab(prev => prev === 'view' ? 'reskine' : 'view');
       }
     };
 
@@ -31,7 +30,7 @@ export default function PDFViewerPage() {
   }, []);
 
   const shortcuts = [
-    { key: "Ctrl + E", description: "Cycle through view/text/images" },
+    { key: "Ctrl + E", description: "Toggle between view/reskine" },
     { key: "?", description: "Show/hide shortcuts" },
     { key: "Esc", description: "Close shortcuts" },
     { key: "←/→", description: "Previous/Next page" },
@@ -84,26 +83,15 @@ export default function PDFViewerPage() {
                           <span>View PDF</span>
                         </button>
                         <button
-                          onClick={() => setActiveTab('text')}
+                          onClick={() => setActiveTab('reskine')}
                           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 flex items-center space-x-2 ${
-                            activeTab === 'text'
+                            activeTab === 'reskine'
                               ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                               : "text-gray-600 hover:bg-indigo-50"
                           }`}
                         >
                           <FileText className="h-4 w-4" />
-                          <span>Extract Text</span>
-                        </button>
-                        <button
-                          onClick={() => setActiveTab('images')}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 flex items-center space-x-2 ${
-                            activeTab === 'images'
-                              ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                              : "text-gray-600 hover:bg-indigo-50"
-                          }`}
-                        >
-                          <Image className="h-4 w-4" />
-                          <span>Extract Images</span>
+                          <span>Reskine</span>
                         </button>
                       </div>
                     </div>
@@ -144,35 +132,17 @@ export default function PDFViewerPage() {
                 </div>
               )}
 
-              {/* Enhanced Content Area */}
-              <div className="flex flex-col lg:flex-row h-[calc(100vh-12rem)]">
-                {/* PDF Viewer */}
-                <div 
-                  className={`
-                    flex-1 transition-all duration-500 ease-in-out transform
-                    ${activeTab !== 'view' ? 'lg:w-1/2' : 'lg:w-full'}
-                    ${activeTab !== 'view' ? 'lg:block hidden' : 'block'}
-                  `}
-                >
+              {/* Content Area */}
+              <div className="h-[calc(100vh-12rem)]">
+                {activeTab === 'view' ? (
                   <div className="h-full">
                     <PDFViewer className="h-full" />
                   </div>
-                </div>
-
-                {/* Text/Image Extractor */}
-                <div 
-                  className={`
-                    transition-all duration-500 ease-in-out transform
-                    ${activeTab !== 'view' ? 'lg:w-1/2 w-full' : 'lg:w-0 w-full'}
-                    ${activeTab !== 'view' ? 'block' : 'hidden'}
-                    border-t lg:border-t-0 lg:border-l border-indigo-100
-                    bg-gradient-to-br from-white to-indigo-50/20
-                  `}
-                >
-                  <div className="h-full overflow-y-auto p-4 custom-scrollbar">
-                    {activeTab === 'text' ? <PDFTextExtractor /> : <PDFImageExtractor />}
+                ) : (
+                  <div className="h-full overflow-y-auto p-4 custom-scrollbar bg-gradient-to-br from-white to-indigo-50/20">
+                    <PDFReskineExtractor />
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
