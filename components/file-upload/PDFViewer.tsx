@@ -14,7 +14,7 @@ const workerSrc = typeof window !== 'undefined'
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 // Cache for storing rendered pages with size limit
-const MAX_CACHE_SIZE = 50; // Maximum number of pages to cache
+const MAX_CACHE_SIZE = 10; // Reduced cache size to improve memory usage while maintaining smooth navigation
 const pageCache = new Map<string, ImageBitmap>();
 
 // Helper function to manage cache size
@@ -153,24 +153,54 @@ interface ThumbnailProps {
 
 const Thumbnail = memo(function Thumbnail({ pdf, pageNumber, isSelected, onClick }: ThumbnailProps) {
   const [isLoading, setIsLoading] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
+  const thumbnailRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { 
+        root: null,
+        rootMargin: '50px',
+        threshold: 0.1 
+      }
+    );
+
+    if (thumbnailRef.current) {
+      observer.observe(thumbnailRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div
+      ref={thumbnailRef}
       className={`cursor-pointer p-2 transition-all ${
         isSelected ? "bg-indigo-100 ring-2 ring-indigo-500" : "hover:bg-gray-100"
       } rounded-lg`}
       onClick={onClick}
     >
-      <div className="relative">
-        <PDFPageCanvas
-          pdf={pdf}
-          pageNumber={pageNumber}
-          scale={0.2}
-          onRenderComplete={() => setIsLoading(false)}
-        />
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/50">
-            <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+      <div className="relative" style={{ height: isVisible ? 'auto' : '100px' }}>
+        {isVisible ? (
+          <>
+            <PDFPageCanvas
+              pdf={pdf}
+              pageNumber={pageNumber}
+              scale={0.2}
+              onRenderComplete={() => setIsLoading(false)}
+            />
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/50">
+                <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+            <Loader2 className="h-4 w-4 text-gray-400" />
           </div>
         )}
       </div>
@@ -227,8 +257,8 @@ export function PDFViewer({ className = "" }: PDFViewerProps) {
           data: byteArray,
           cMapUrl: "/cmaps/",
           cMapPacked: true,
-          enableXfa: true, // Enable support for XFA forms
-          useSystemFonts: true, // Use system fonts when possible
+          enableXfa: false, // Disabled XFA support for faster loading
+          useSystemFonts: false, // Disabled system fonts for faster loading
         });
 
         loadingTask.onProgress = (progress: { loaded: number; total: number }) => {

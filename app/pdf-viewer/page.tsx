@@ -6,6 +6,19 @@ import { UploadProvider } from "../../components/file-upload/UploadContext";
 import FileUploadExample from "../../components/file-upload/FileUploadExample";
 import { useState, useEffect } from "react";
 import { FileText, Eye, Keyboard } from "lucide-react";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Preload PDF.js worker
+if (typeof window !== 'undefined') {
+  const workerSrc = `${window.location.origin}/pdf.worker.mjs`;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+  
+  // Preload cmaps
+  fetch('/cmaps/Adobe-CNS1-UCS2.bcmap').catch(() => {});
+  fetch('/cmaps/Adobe-GB1-UCS2.bcmap').catch(() => {});
+  fetch('/cmaps/Adobe-Japan1-UCS2.bcmap').catch(() => {});
+  fetch('/cmaps/Adobe-Korea1-UCS2.bcmap').catch(() => {});
+}
 
 export default function PDFViewerPage() {
   const [activeTab, setActiveTab] = useState<'view' | 'reskine'>('view');
