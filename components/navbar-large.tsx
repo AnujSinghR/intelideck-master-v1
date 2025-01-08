@@ -1,37 +1,83 @@
 import React from "react";
-import MaxWidthWrapper from "./common/MaxWidthWrapper";
 import Link from "next/link";
-import { Presentation } from "lucide-react";
-import { Button } from "./ui/button";
+import Image from "next/image";
+import { 
+  Wand2, 
+  PlayCircle, 
+  MessageSquare, 
+  FileSpreadsheet,
+  FileText,
+  Menu
+} from "lucide-react";
 
 const NavbarLarge = () => {
   return (
-    <MaxWidthWrapper className="flex items-center justify-between px-8 py-4 w-full text-gray-900 border-b border-gray-300">
-      <div className="flex items-center space-x-8">
-        <Link
-          href="/"
-          className="text-xl font-semibold flex gap-2 items-center"
+    <nav className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white p-4 shadow-xl">
+      <Link
+        href="/"
+        className="flex items-center gap-3 px-4 py-3 mb-8 hover:bg-gray-700/50 rounded-lg transition-all"
+      >
+        <Image
+          src="/logo-emb.jpg"
+          width={30}
+          height={30}
+          alt="logo"
+          className="rounded-full"
+        />
+        <span className="text-lg font-semibold">SlideGen</span>
+      </Link>
+
+      <div className="space-y-2">
+        <Link 
+          href="/generate" 
+          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 rounded-lg transition-all group"
         >
-          <Presentation />
-          <span>SlideGen</span>
+          <Wand2 className="w-5 h-5 text-gray-400 group-hover:text-violet-400 transition-colors" />
+          <span className="text-gray-300 group-hover:text-white transition-colors">Generate</span>
         </Link>
 
-        <div className="space-x-8 hidden md:flex text-sm">
-          <Link href="/generate" className="hover:text-violet-600 transition-colors">Generate</Link>
-          <Link href="/demo" className="hover:text-violet-600 transition-colors">Demo</Link>
-          <Link href="/ai-chat" className="hover:text-violet-600 transition-colors">AI Chat</Link>
-          <Link href="/pptx" className="hover:text-violet-600 transition-colors">PPT X Tractor</Link>
-          <Link href="/pdf-viewer" className="hover:text-violet-600 transition-colors">PDF REskin</Link>
-        </div>
-      </div>
-      <div className="hidden md:flex space-x-4 items-center">
-        <Link href="/generate">
-          <Button className="bg-violet-600 hover:bg-violet-700 text-white">
-            Try Now
-          </Button>
+        <Link 
+          href="/demo" 
+          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 rounded-lg transition-all group"
+        >
+          <PlayCircle className="w-5 h-5 text-gray-400 group-hover:text-violet-400 transition-colors" />
+          <span className="text-gray-300 group-hover:text-white transition-colors">AI PPT Generate</span>
+        </Link>
+
+        <Link 
+          href="/ai-chat" 
+          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 rounded-lg transition-all group"
+        >
+          <MessageSquare className="w-5 h-5 text-gray-400 group-hover:text-violet-400 transition-colors" />
+          <span className="text-gray-300 group-hover:text-white transition-colors">AI Chat</span>
+        </Link>
+
+        <Link 
+          href="/pptx" 
+          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 rounded-lg transition-all group"
+        >
+          <FileSpreadsheet className="w-5 h-5 text-gray-400 group-hover:text-violet-400 transition-colors" />
+          <span className="text-gray-300 group-hover:text-white transition-colors">PPT Reskin</span>
+        </Link>
+
+        <Link 
+          href="/pdf-viewer" 
+          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 rounded-lg transition-all group"
+        >
+          <FileText className="w-5 h-5 text-gray-400 group-hover:text-violet-400 transition-colors" />
+          <span className="text-gray-300 group-hover:text-white transition-colors">PDF Reskin</span>
         </Link>
       </div>
-    </MaxWidthWrapper>
+
+      <div className="absolute bottom-8 left-0 w-full px-4">
+        <Link href="/generate">
+          <button className="w-full py-3 px-4 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2">
+            <Wand2 className="w-5 h-5" />
+            Sign Up
+          </button>
+        </Link>
+      </div>
+    </nav>
   );
 };
 
