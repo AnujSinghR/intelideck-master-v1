@@ -27,42 +27,56 @@ interface ChatResponse {
   error?: string;
 }
 
-const prompts = [
+interface Prompt {
+  category: string;
+  description: string;
+  prompt: string;
+  gradient: string;
+  isLoading?: boolean;
+}
+
+const defaultPrompts: Prompt[] = [
   {
     category: "Digital Marketing",
     description: "Trends & Campaigns",
     prompt: "Create a comprehensive presentation about current digital marketing trends, campaign insights, and action plans. Include key statistics, emerging technologies, and strategic recommendations.",
     gradient: "from-blue-500 to-violet-600",
+    isLoading: false
   },
   {
     category: "SEO Strategy",
     description: "Website Optimization",
     prompt: "Create a detailed SEO strategy presentation covering current performance analysis, technical improvements, content strategy, and implementation plans for better search rankings.",
     gradient: "from-emerald-500 to-teal-600",
+    isLoading: false
   },
   {
     category: "Market Analysis",
     description: "Competitive Research",
     prompt: "Create a market analysis presentation including industry overview, competitor analysis, SWOT analysis, and strategic recommendations for market positioning.",
     gradient: "from-orange-500 to-red-600",
+    isLoading: false
   },
   {
     category: "Social Media",
     description: "Platform Strategy",
     prompt: "Create a social media strategy presentation covering platform analysis, content planning, engagement tactics, and growth strategies across different social networks.",
     gradient: "from-pink-500 to-rose-600",
+    isLoading: false
   },
   {
     category: "E-commerce",
     description: "Growth & Retention",
     prompt: "Create an e-commerce strategy presentation focusing on customer analysis, retention strategies, growth opportunities, and implementation plans for increasing sales.",
     gradient: "from-purple-500 to-indigo-600",
+    isLoading: false
   },
   {
     category: "Product Launch",
     description: "Go-to-Market Strategy",
     prompt: "Create a product launch strategy presentation including product overview, marketing approach, launch timeline, and success metrics for a successful market entry.",
     gradient: "from-cyan-500 to-blue-600",
+    isLoading: false
   }
 ];
 
@@ -85,6 +99,7 @@ export default function DemoPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [prompts, setPrompts] = useState<Prompt[]>(defaultPrompts);
 
   // Previous functions remain the same
   const handleSubmit = async (e: React.FormEvent) => {
@@ -423,26 +438,6 @@ export default function DemoPage() {
               `}>
                 <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-transparent via-transparent to-blue-200/30"></div>
-                <div className="absolute inset-0 flex items-center justify-between px-8 pointer-events-none">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-16 w-16 rounded-full bg-white/80 hover:bg-blue-50 backdrop-blur-md pointer-events-auto transition-all duration-300 text-slate-600 border border-slate-200 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-100/50"
-                    onClick={prevSlide}
-                    disabled={currentSlide === 0}
-                  >
-                    <ChevronLeft className="h-10 w-10" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-16 w-16 rounded-full bg-white/80 hover:bg-blue-50 backdrop-blur-md pointer-events-auto transition-all duration-300 text-slate-600 border border-slate-200 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-100/50"
-                    onClick={nextSlide}
-                    disabled={currentSlide === slides.length - 1}
-                  >
-                    <ChevronRight className="h-10 w-10" />
-                  </Button>
-                </div>
                 
                 <div 
                   className={`
@@ -604,7 +599,13 @@ export default function DemoPage() {
                           e.stopPropagation();
                           if (isLoading) return;
                           
-                          setIsLoading(true);
+                          // Create a local loading state for this button
+                          const thisPrompt = prompt;
+                          setPrompts(prevPrompts => 
+                            prevPrompts.map(p => 
+                              p === thisPrompt ? {...p, isLoading: true} : p
+                            )
+                          );
                           const userMessage = { role: "user", content: `${prompt.prompt} Format the presentation with the following structure:
 1. Each slide should have a clear, concise title
 2. Content should be in bullet points
@@ -686,12 +687,17 @@ Format as "Title: [title]" followed by bullet points using • symbol.` };
                             });
                             setMessages([]);
                           } finally {
-                            setIsLoading(false);
+                            // Clear loading state for this button
+                            setPrompts(prevPrompts => 
+                              prevPrompts.map(p => 
+                                p === thisPrompt ? {...p, isLoading: false} : p
+                              )
+                            );
                           }
                         }}
-                        disabled={isLoading}
+                        disabled={prompt.isLoading}
                       >
-                        {isLoading ? (
+                        {prompt.isLoading ? (
                           <div className="flex items-center space-x-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             <span>Generating...</span>
