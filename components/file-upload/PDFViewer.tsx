@@ -5,7 +5,7 @@ import { useUpload } from "./UploadContext";
 import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocumentProxy } from "pdfjs-dist/types/src/display/api";
 import { ScrollArea } from "../ui/scroll-area";
-import { Loader2, ZoomIn, ZoomOut, Maximize, Minimize } from "lucide-react";
+import { Loader2, ZoomIn, ZoomOut } from "lucide-react";
 
 // Ensure worker is loaded correctly in both development and production
 const workerSrc = typeof window !== 'undefined' 
@@ -221,11 +221,10 @@ export function PDFViewer({ className = "" }: PDFViewerProps) {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(100);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy | null>(null);
-  const [showThumbnails, setShowThumbnails] = useState(true);
+  const [showThumbnails, setShowThumbnails] = useState(true); // Always show thumbnails by default
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Load PDF document
@@ -315,9 +314,6 @@ export function PDFViewer({ className = "" }: PDFViewerProps) {
           e.preventDefault();
           setZoomLevel(100);
         }
-      } else if (e.key === "f") {
-        e.preventDefault();
-        setIsFullscreen(prev => !prev);
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
         setCurrentPage(prev => Math.min(totalPages, prev + 1));
@@ -350,10 +346,6 @@ export function PDFViewer({ className = "" }: PDFViewerProps) {
 
   const toggleThumbnails = useCallback(() => {
     setShowThumbnails(prev => !prev);
-  }, []);
-
-  const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(prev => !prev);
   }, []);
 
   if (isLoading) {
@@ -466,20 +458,11 @@ export function PDFViewer({ className = "" }: PDFViewerProps) {
           >
             {showThumbnails ? "Hide Thumbnails" : "Show Thumbnails"}
           </button>
-
-          {/* Fullscreen Button */}
-          <button
-            onClick={toggleFullscreen}
-            className="p-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
-            title="Toggle Fullscreen (F)"
-          >
-            {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-          </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className={`flex-1 flex ${isFullscreen ? "fixed inset-0 z-50 bg-white" : ""}`}>
+      <div className="flex-1 flex">
         {/* Thumbnails Sidebar */}
         {showThumbnails && (
           <div className="w-48 border-r bg-gray-50 overflow-hidden flex flex-col">

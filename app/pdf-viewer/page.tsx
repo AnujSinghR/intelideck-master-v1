@@ -47,8 +47,7 @@ export default function PDFViewerPage() {
     { key: "?", description: "Show/hide shortcuts" },
     { key: "Esc", description: "Close shortcuts" },
     { key: "←/→", description: "Previous/Next page" },
-    { key: "Ctrl + +/-", description: "Zoom in/out" },
-    { key: "F", description: "Toggle fullscreen" },
+    { key: "Ctrl + +/-", description: "Zoom in/out" }
   ];
 
   return (
