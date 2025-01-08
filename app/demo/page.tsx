@@ -444,48 +444,115 @@ export default function DemoPage() {
                   </Button>
                 </div>
                 
-                <div className={`
-                  h-full flex flex-col justify-start pt-8 relative z-10
-                  transform transition-transform duration-500 ease-out
-                  ${isAnimating ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}
-                  overflow-hidden
-                `}>
-                  <h2 className={`text-5xl md:text-6xl font-bold text-center mb-8 ${slides[currentSlide].textColor} drop-shadow-lg line-clamp-2`}>
-                    {slides[currentSlide].title}
-                  </h2>
-                  <div className="space-y-6 overflow-y-auto max-h-[55vh] scrollbar-hide pr-4 pb-12">
-                    {slides[currentSlide].content.map((point: string, index: number) => (
-                      <div
-                        key={index}
-                        className={`
-                          flex items-start space-x-6 text-lg md:text-xl ${slides[currentSlide].textColor}
-                          transform transition-all duration-500 delay-${index * 100}
-                          ${isAnimating ? 'translate-x-10 opacity-0' : 'translate-x-0 opacity-100'}
-                        `}
+                <div 
+                  className={`
+                    absolute inset-0 flex flex-col justify-start p-12
+                    transform transition-all duration-500 ease-out
+                    ${isAnimating ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}
+                  `}
+                  style={{
+                    transform: isAnimating 
+                      ? `translate${currentSlide > slides.length - 1 ? 'X(100%)' : 'X(-100%)'}`
+                      : 'translateX(0)',
+                    opacity: isAnimating ? 0 : 1
+                  }}
+                >
+                  <div className="relative w-full h-full flex flex-col">
+                    <h2 
+                      className={`
+                        text-4xl sm:text-5xl lg:text-6xl font-bold text-center mb-8 
+                        ${slides[currentSlide].textColor} drop-shadow-lg
+                        transition-all duration-300
+                      `}
+                      style={{
+                        fontSize: slides[currentSlide].title.length > 50 
+                          ? '2.5rem' 
+                          : slides[currentSlide].title.length > 30 
+                            ? '3rem' 
+                            : '3.5rem'
+                      }}
+                    >
+                      {slides[currentSlide].title}
+                    </h2>
+                    
+                    <div className="flex-1 overflow-hidden relative">
+                      <div 
+                        className="absolute inset-0 overflow-y-auto pr-4 space-y-4 sm:space-y-6 hide-scrollbar"
+                        style={{
+                          paddingRight: '20px',
+                          marginRight: '-20px'
+                        }}
                       >
-                        <div className="w-4 h-4 rounded-full bg-slate-700/80 flex-shrink-0 shadow-lg mt-3" />
-                        <p className="text-slate-700 drop-shadow-none leading-relaxed font-medium">{point}</p>
+                        {slides[currentSlide].content.map((point: string, index: number) => {
+                          const fontSize = point.length > 100 ? 'text-base' : point.length > 50 ? 'text-lg' : 'text-xl';
+                          const delay = index * 150;
+                          
+                          return (
+                            <div
+                              key={index}
+                              className={`
+                                flex items-start gap-4 ${slides[currentSlide].textColor}
+                                transform transition-all duration-500
+                                ${isAnimating ? 'translate-y-8 opacity-0' : 'translate-y-0 opacity-100'}
+                              `}
+                              style={{
+                                transitionDelay: `${delay}ms`
+                              }}
+                            >
+                              <div className="w-3 h-3 rounded-full bg-slate-700/80 flex-shrink-0 mt-2.5" />
+                              <p className={`${fontSize} text-slate-700 font-medium leading-relaxed`}>
+                                {point}
+                              </p>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
 
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-4 bg-white/90 px-6 py-3 rounded-full backdrop-blur-sm border border-slate-200">
-                  {slides.map((_: any, index: number) => (
-                    <button
-                      key={index}
-                      className={`
-                        w-3 h-3 rounded-full transition-all duration-300
-                        ${index === currentSlide ? 'bg-blue-500 w-10' : 'bg-slate-200 hover:bg-blue-200'}
-                      `}
-                      onClick={() => {
-                        if (!isAnimating) {
-                          setIsAnimating(true);
-                          setCurrentSlide(index);
-                        }
-                      }}
-                    />
-                  ))}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/90 px-4 py-2 rounded-full backdrop-blur-sm border border-slate-200 shadow-lg">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 hover:bg-blue-50"
+                    onClick={prevSlide}
+                    disabled={currentSlide === 0 || isAnimating}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  <div className="flex gap-2">
+                    {slides.map((_: any, index: number) => (
+                      <button
+                        key={index}
+                        className={`
+                          w-2 h-2 rounded-full transition-all duration-300
+                          ${index === currentSlide 
+                            ? 'bg-blue-500 w-6' 
+                            : 'bg-slate-200 hover:bg-blue-200'
+                          }
+                        `}
+                        onClick={() => {
+                          if (!isAnimating) {
+                            setIsAnimating(true);
+                            setCurrentSlide(index);
+                          }
+                        }}
+                        disabled={isAnimating}
+                      />
+                    ))}
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 hover:bg-blue-50"
+                    onClick={nextSlide}
+                    disabled={currentSlide === slides.length - 1 || isAnimating}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
               </>
