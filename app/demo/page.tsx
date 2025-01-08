@@ -338,25 +338,28 @@ export default function DemoPage() {
               </div>
 
               <div className="space-y-4 pt-4 border-t border-slate-800">
-                <form onSubmit={handleSubmit} className="flex gap-3">
-                  <Input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask about your presentation..."
-                    className="flex-1 text-lg p-6 bg-slate-800 border-slate-700 text-slate-200 placeholder-slate-500 focus:border-blue-500/30 focus:ring-blue-500/20"
-                    disabled={isLoading}
-                  />
-                  <Button
-                    type="submit"
-                    disabled={isLoading || !input.trim()}
-                    className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 hover:text-blue-300 transition-all duration-300 px-8 hover:shadow-lg hover:shadow-blue-500/10 rounded-xl border border-blue-500/30 hover:border-blue-500/50"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Send className="h-5 w-5" />
-                    )}
-                  </Button>
+                <form onSubmit={handleSubmit} className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500 opacity-50"></div>
+                  <div className="relative flex gap-2 bg-slate-800/50 backdrop-blur-xl p-2 rounded-2xl border border-slate-700/50 group-hover:border-blue-500/30 transition-all duration-300">
+                    <Input
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder="Ask about your presentation..."
+                      className="flex-1 text-base px-4 py-3 bg-slate-900/50 border-slate-700/50 text-slate-200 placeholder-slate-400 focus:border-blue-500/30 focus:ring-blue-500/20 rounded-xl"
+                      disabled={isLoading}
+                    />
+                    <Button
+                      type="submit"
+                      disabled={isLoading || !input.trim()}
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white transition-all duration-300 px-4 rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 border-0 min-w-[56px]"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Send className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </div>
                 </form>
 
                 {messages.length > 0 && (
