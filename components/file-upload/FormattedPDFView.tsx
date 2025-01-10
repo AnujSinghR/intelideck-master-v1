@@ -86,98 +86,122 @@ export function FormattedPDFView({ pages }: FormattedPDFViewProps) {
       setProgress(0);
       
       const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
       });
-
+  
       const pageWidth = 210;
       const pageHeight = 297;
       const margin = 20;
-      const usableWidth = pageWidth - (2 * margin);
+      const usableWidth = pageWidth - 2 * margin;
       const lineHeight = 7;
-
+  
+      // Load the background image
+      let bgImage: string;
+      try {
+        bgImage = await fetch("/pdf-bg.jpg")
+          .then((res) => {
+            if (!res.ok) throw new Error('Failed to load background image');
+            return res.blob();
+          })
+          .then((blob) => new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = reader.result;
+              if (typeof result === 'string') {
+                resolve(result);
+              } else {
+                reject(new Error('Failed to convert image to base64'));
+              }
+            };
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(blob);
+          }));
+      } catch (error) {
+        console.warn('Failed to load background image:', error);
+        // Continue without background image
+        bgImage = '';
+      }
+  
       for (let i = 0; i < pages.length; i++) {
         setCurrentPage(i + 1);
         setProgress(Math.round((i / pages.length) * 100));
-
+  
         if (i > 0) {
           doc.addPage();
         }
-
-        // Add subtle gradient background
-        doc.setFillColor(249, 250, 251); // gray-50
-        doc.rect(0, 0, pageWidth, pageHeight, 'F');
-        doc.setFillColor(243, 244, 246); // gray-100
-        doc.rect(0, 0, pageWidth, 40, 'F');
-
-        // Page number
-        doc.setTextColor(0, 0, 0);
-        doc.setFont('helvetica', 'bold');
+  
+        // Add the background image if loaded successfully
+        if (bgImage) {
+          doc.addImage(bgImage, "JPEG", 0, 0, pageWidth, pageHeight);
+        }
+  
+        // Add page number
+        doc.setFont("helvetica", "bold");
         doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
         doc.text(`Page ${i + 1}`, margin, margin);
-
-        // Line
+  
+        // Line below the page number
         doc.setDrawColor(79, 70, 229); // indigo-600
         doc.setLineWidth(0.5);
         doc.line(margin, margin + 5, pageWidth - margin, margin + 5);
-
+  
         let yPosition = margin + 20;
-
+  
         // Process formatted content
         const elements = parseContent(pages[i]);
-        
+  
         elements.forEach((element: FormattedElement) => {
           if (yPosition > pageHeight - margin - lineHeight) {
             doc.addPage();
-            // Add gradient background to new page
-            doc.setFillColor(249, 250, 251);
-            doc.rect(0, 0, pageWidth, pageHeight, 'F');
-            doc.setFillColor(243, 244, 246);
-            doc.rect(0, 0, pageWidth, 40, 'F');
+            if (bgImage) {
+              doc.addImage(bgImage, "JPEG", 0, 0, pageWidth, pageHeight);
+            }
             yPosition = margin + 20;
           }
-
+  
           switch (element.type) {
-            case 'h1':
-              doc.setFont('helvetica', 'bold');
+            case "h1":
+              doc.setFont("helvetica", "bold");
               doc.setFontSize(16);
               doc.setTextColor(0, 0, 0);
               doc.text(element.content as string, margin, yPosition);
               yPosition += lineHeight * 2;
               break;
-
-            case 'h2':
-              doc.setFont('helvetica', 'bold');
+  
+            case "h2":
+              doc.setFont("helvetica", "bold");
               doc.setFontSize(14);
               doc.setTextColor(0, 0, 0);
               doc.text(element.content as string, margin, yPosition);
               yPosition += lineHeight * 1.5;
               break;
-
-            case 'list':
-            case 'steps':
-              doc.setFont('helvetica', 'normal');
+  
+            case "list":
+            case "steps":
+              doc.setFont("helvetica", "normal");
               doc.setFontSize(11);
               doc.setTextColor(0, 0, 0);
               (element.content as string[]).forEach((item, index) => {
-                const bullet = element.type === 'steps' ? `${index + 1}.` : '•';
-                const bulletWidth = doc.getTextWidth(bullet + ' ');
+                const bullet = element.type === "steps" ? `${index + 1}.` : "•";
+                const bulletWidth = doc.getTextWidth(bullet + " ");
                 doc.text(bullet, margin, yPosition);
                 const lines = doc.splitTextToSize(item, usableWidth - bulletWidth - 2);
                 lines.forEach((line: string, lineIndex: number) => {
-                  doc.text(line, margin + bulletWidth, yPosition + (lineIndex * lineHeight));
+                  doc.text(line, margin + bulletWidth, yPosition + lineIndex * lineHeight);
                   if (lineIndex === lines.length - 1) yPosition += (lineIndex + 1) * lineHeight;
                 });
                 yPosition += lineHeight;
               });
               yPosition += lineHeight;
               break;
-
-            case 'callout':
+  
+            case "callout":
               doc.setFillColor(243, 244, 246); // gray-100
-              doc.roundedRect(margin, yPosition - 5, usableWidth, 30, 2, 2, 'F');
-              doc.setFont('helvetica', 'bold');
+              doc.roundedRect(margin, yPosition - 5, usableWidth, 30, 2, 2, "F");
+              doc.setFont("helvetica", "bold");
               doc.setFontSize(11);
               doc.setTextColor(0, 0, 0);
               const calloutLines = doc.splitTextToSize(element.content as string, usableWidth - 20);
@@ -187,40 +211,40 @@ export function FormattedPDFView({ pages }: FormattedPDFViewProps) {
               });
               yPosition += lineHeight * 2;
               break;
-
-            case 'table':
+  
+            case "table":
               const table = element.content as string[][];
               const colWidth = (usableWidth - 20) / table[0].length;
-              
+  
               // Table header
               doc.setFillColor(243, 244, 246); // gray-100
-              doc.rect(margin, yPosition - 5, usableWidth, lineHeight + 5, 'F');
-              doc.setFont('helvetica', 'bold');
+              doc.rect(margin, yPosition - 5, usableWidth, lineHeight + 5, "F");
+              doc.setFont("helvetica", "bold");
               doc.setFontSize(11);
               doc.setTextColor(0, 0, 0);
-              
+  
               table[0].forEach((header, colIndex) => {
-                doc.text(header, margin + 5 + (colWidth * colIndex), yPosition);
+                doc.text(header, margin + 5 + colWidth * colIndex, yPosition);
               });
               yPosition += lineHeight * 1.5;
-
+  
               // Table rows
-              doc.setFont('helvetica', 'normal');
+              doc.setFont("helvetica", "normal");
               table.slice(1).forEach((row, rowIndex) => {
                 if (rowIndex % 2 === 0) {
                   doc.setFillColor(249, 250, 251); // gray-50
-                  doc.rect(margin, yPosition - 5, usableWidth, lineHeight + 5, 'F');
+                  doc.rect(margin, yPosition - 5, usableWidth, lineHeight + 5, "F");
                 }
                 row.forEach((cell, colIndex) => {
-                  doc.text(cell, margin + 5 + (colWidth * colIndex), yPosition);
+                  doc.text(cell, margin + 5 + colWidth * colIndex, yPosition);
                 });
                 yPosition += lineHeight * 1.5;
               });
               yPosition += lineHeight;
               break;
-
+  
             default:
-              doc.setFont('helvetica', 'normal');
+              doc.setFont("helvetica", "normal");
               doc.setFontSize(11);
               doc.setTextColor(0, 0, 0);
               const lines = doc.splitTextToSize(element.content as string, usableWidth);
@@ -232,17 +256,18 @@ export function FormattedPDFView({ pages }: FormattedPDFViewProps) {
           }
         });
       }
-
+  
       setProgress(100);
-      doc.save('formatted-text.pdf');
+      doc.save("formatted-text.pdf");
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error("Error generating PDF:", error);
     } finally {
       setIsGenerating(false);
       setCurrentPage(0);
       setProgress(0);
     }
   };
+  
 
   return (
     <div className="flex flex-col h-full bg-white">
