@@ -7,7 +7,32 @@ import { ChatSection } from "./components/ChatSection";
 import { PromptSection } from "./components/PromptSection";
 import { SlideSection } from "./components/SlideSection";
 import { generatePPTX } from "./utils/pptx";
-import { Message, Slide, defaultPrompts, Prompt, slideStyles } from "./types";
+import { parseSlides } from "./utils/slideParser";
+import { generatePresentation, sanitizePrompt } from "./utils/api";
+import { Message, Slide, defaultPrompts, Prompt } from "./types";
+
+const PRESENTATION_FORMAT = `Format the presentation with the following structure:
+1. Each slide should have a clear, concise title
+2. Content should be in bullet points
+3. Each point should be a complete thought
+4. Keep points focused and impactful
+5. Use consistent formatting throughout
+6. Limit to 4-6 points per slide for better readability
+
+Use the following slide styles:
+- Title slides (Style: title): For introduction and main section starts
+- Section slides (Style: section): For major topic transitions
+- Content slides (Style: content): For regular content
+- Quote slides (Style: quote): For important quotes or key takeaways
+- Data slides (Style: data): For statistics and data-heavy content
+
+Format each slide as:
+Title: [Slide Title]
+Style: [slide style]
+Data: [type] (only for data slides - chart/comparison/statistics)
+• Point 1
+• Point 2
+etc.`;
 
 export default function DemoPage() {
   const { toast } = useToast();
@@ -23,62 +48,41 @@ export default function DemoPage() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
+    const sanitizedInput = sanitizePrompt(input);
+    
     // Display message shows only user input
     const displayMessage = { role: "user", content: input };
     // API message includes formatting instructions
-    const apiMessage = { role: "user", content: `${input}\n\nFormat the presentation with the following structure:
-1. Each slide should have a clear, concise title
-2. Content should be in bullet points
-3. Each point should be a complete thought
-4. Keep points focused and impactful
-5. Use consistent formatting throughout
-6. Limit to 4-6 points per slide for better readability
-
-Use the following slide styles:
-- Title slides (Style: title): For introduction and main section starts
-- Section slides (Style: section): For major topic transitions
-- Content slides (Style: content): For regular content
-- Quote slides (Style: quote): For important quotes or key takeaways
-- Data slides (Style: data): For statistics and data-heavy content
-
-Format each slide as:
-Title: [Slide Title]
-Style: [slide style]
-Data: [type] (only for data slides - chart/comparison/statistics)
-• Point 1
-• Point 2
-etc.` };
+    const apiMessage = { role: "user", content: `${sanitizedInput}\n\n${PRESENTATION_FORMAT}` };
     
     setMessages((prev) => [...prev, displayMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [...messages.map(msg => 
-            msg.role === "user" ? { role: "user", content: msg.content.split('\n\n')[0] } : msg
-          ), apiMessage]
-        }),
-      });
+      const generatedText = await generatePresentation([
+        ...messages.map(msg => 
+          msg.role === "user" 
+            ? { role: "user", content: msg.content.split('\n\n')[0] } 
+            : msg
+        ), 
+        apiMessage
+      ]);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to generate response');
-      }
-
-      const data = await response.json();
+      setMessages((prev) => [...prev, { role: "assistant", content: generatedText }]);
       
-      if (!data.text) {
-        throw new Error('Invalid response format');
+      try {
+        const parsedSlides = parseSlides(generatedText);
+        setSlides(parsedSlides);
+        setCurrentSlide(0);
+      } catch (parseError: any) {
+        console.error("Slide parsing error:", parseError);
+        toast({
+          title: "Format Error",
+          description: "The AI generated an invalid presentation format. Please try rephrasing your request.",
+          variant: "destructive",
+        });
       }
-
-      setMessages((prev) => [...prev, { role: "assistant", content: data.text }]);
-      parseAndSetSlides(data.text);
     } catch (error: any) {
       console.error("Error generating response:", error);
       toast({
@@ -93,57 +97,31 @@ etc.` };
   };
 
   const handlePromptSelect = async (prompt: Prompt) => {
-    const apiMessage = { role: "user", content: `${prompt.prompt}\n\nFormat the presentation with the following structure:
-1. Each slide should have a clear, concise title
-2. Content should be in bullet points
-3. Each point should be a complete thought
-4. Keep points focused and impactful
-5. Use consistent formatting throughout
-6. Limit to 4-6 points per slide for better readability
-
-Use the following slide styles:
-- Title slides (Style: title): For introduction and main section starts
-- Section slides (Style: section): For major topic transitions
-- Content slides (Style: content): For regular content
-- Quote slides (Style: quote): For important quotes or key takeaways
-- Data slides (Style: data): For statistics and data-heavy content
-
-Format each slide as:
-Title: [Slide Title]
-Style: [slide style]
-Data: [type] (only for data slides - chart/comparison/statistics)
-• Point 1
-• Point 2
-etc.` };
+    const sanitizedPrompt = sanitizePrompt(prompt.prompt);
+    const apiMessage = { role: "user", content: `${sanitizedPrompt}\n\n${PRESENTATION_FORMAT}` };
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [apiMessage]
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate response');
-      }
-
-      const data = await response.json();
-      if (!data.text) {
-        throw new Error('Invalid response format');
-      }
+      const generatedText = await generatePresentation([apiMessage]);
 
       // Update messages with display version
       setMessages([
         { role: "user", content: prompt.prompt },
-        { role: "assistant", content: data.text }
+        { role: "assistant", content: generatedText }
       ]);
 
-      parseAndSetSlides(data.text);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      try {
+        const parsedSlides = parseSlides(generatedText);
+        setSlides(parsedSlides);
+        setCurrentSlide(0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (parseError: any) {
+        console.error("Slide parsing error:", parseError);
+        toast({
+          title: "Format Error",
+          description: "The AI generated an invalid presentation format. Please try a different template.",
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
       console.error("Error:", error);
       toast({
@@ -155,70 +133,33 @@ etc.` };
     }
   };
 
-  const parseAndSetSlides = (text: string) => {
-    const slideTexts = text.split('\n\n').filter((text: string) => 
-      text.trim() && (text.toLowerCase().includes('title:') || text.includes('•'))
-    );
-    
-    if (slideTexts.length === 0) {
-      toast({
-        title: "No presentation content found",
-        description: "The AI response doesn't contain properly formatted slides. Try asking a question about creating a presentation.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const parsedSlides = slideTexts.map((slideText: string) => {
-      const lines = slideText.split('\n').filter((line: string) => line.trim());
-      
-      // Extract title and style
-      const titleLine = lines[0].replace(/^[IVX]+\.\s*/, '').replace(/^Title:?\s*/i, '').replace(/^Slide\s*\d*:?\s*/i, '').trim();
-      const styleLine = lines.find(line => line.toLowerCase().includes('style:'))?.replace(/^Style:\s*/i, '').toLowerCase() || 'content';
-      const dataTypeLine = lines.find(line => line.toLowerCase().includes('data:'))?.replace(/^Data:\s*/i, '').toLowerCase();
-      
-      const title = titleLine;
-      const style = styleLine as Slide['style'];
-      const dataType = dataTypeLine as Slide['dataType'];
-      
-      // Extract content, skipping style and data type lines
-      const content = lines.slice(1)
-        .filter(line => !line.toLowerCase().includes('style:') && !line.toLowerCase().includes('data:'))
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .map(line => line
-          .replace(/^[-•*]\s*/, '')
-          .replace(/^\d+\.\s*/, '')
-          .replace(/^[A-Z]\)\s*/, '')
-          .replace(/^[a-z]\)\s*/, '')
-          .trim()
-        )
-        .filter(line => line.length > 0);
-
-      return {
-        title,
-        content,
-        style,
-        dataType,
-        bgColor: slideStyles[style].bg,
-        textColor: slideStyles[style].text
-      };
-    });
-
-    setSlides(parsedSlides);
-    setCurrentSlide(0);
-  };
-
   const nextSlide = () => {
-    if (isAnimating) return;
+    if (isAnimating || currentSlide >= slides.length - 1) return;
     setIsAnimating(true);
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
+    setCurrentSlide((prev) => prev + 1);
   };
 
   const prevSlide = () => {
-    if (isAnimating) return;
+    if (isAnimating || currentSlide <= 0) return;
     setIsAnimating(true);
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    setCurrentSlide((prev) => prev - 1);
+  };
+
+  const handleDownload = async () => {
+    try {
+      await generatePPTX(slides);
+      toast({
+        title: "Success",
+        description: "Presentation downloaded successfully!",
+      });
+    } catch (error: any) {
+      console.error("Download error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to download presentation. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   useEffect(() => {
@@ -252,7 +193,7 @@ etc.` };
                 onPrevSlide={prevSlide}
                 onNextSlide={nextSlide}
                 onSlideSelect={setCurrentSlide}
-                onDownload={() => generatePPTX(slides)}
+                onDownload={handleDownload}
               />
             ) : (
               <PromptSection

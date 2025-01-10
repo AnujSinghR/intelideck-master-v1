@@ -2,7 +2,6 @@ import { Card } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { Prompt } from '../types';
-import { useToast } from '../../../hooks/use-toast';
 import { Dispatch, SetStateAction } from 'react';
 
 interface PromptSectionProps {
@@ -12,6 +11,30 @@ interface PromptSectionProps {
 }
 
 export function PromptSection({ prompts, setPrompts, onPromptSelect }: PromptSectionProps) {
+  const handlePromptClick = async (e: React.MouseEvent, prompt: Prompt) => {
+    e.stopPropagation();
+    if (prompt.isLoading) return;
+
+    // Create a local loading state for this button
+    setPrompts(prevPrompts => 
+      prevPrompts.map(p => 
+        p === prompt ? {...p, isLoading: true} : {...p, isLoading: false}
+      )
+    );
+
+    try {
+      await onPromptSelect(prompt);
+    } catch (error) {
+      // Error handling is done in the parent component
+      console.error('Prompt selection error:', error);
+    } finally {
+      // Clear loading state for all buttons
+      setPrompts(prevPrompts => 
+        prevPrompts.map(p => ({...p, isLoading: false}))
+      );
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="text-center space-y-6 mb-12">
@@ -28,7 +51,11 @@ export function PromptSection({ prompts, setPrompts, onPromptSelect }: PromptSec
         {prompts.map((prompt, index) => (
           <Card
             key={index}
-            className="group relative overflow-hidden rounded-xl backdrop-blur-sm border border-slate-200 hover:border-blue-200 transition-all duration-500"
+            className={`
+              group relative overflow-hidden rounded-xl backdrop-blur-sm border border-slate-200 
+              hover:border-blue-200 transition-all duration-500
+              ${prompt.isLoading ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'}
+            `}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-white/90 to-slate-50/90"></div>
             <div className={`absolute inset-0 bg-gradient-to-br ${prompt.gradient} opacity-0 group-hover:opacity-60 transition-all duration-500`} />
@@ -54,29 +81,14 @@ export function PromptSection({ prompts, setPrompts, onPromptSelect }: PromptSec
               </p>
               <Button
                 variant="ghost"
-                className="mt-6 w-full bg-blue-50 hover:bg-blue-100 text-slate-600 hover:text-slate-700 border border-slate-200 hover:border-blue-200 transition-all duration-300 backdrop-blur-sm"
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  if (prompt.isLoading) return;
-                  
-                  // Create a local loading state for this button
-                  setPrompts(prevPrompts => 
-                    prevPrompts.map(p => 
-                      p === prompt ? {...p, isLoading: true} : p
-                    )
-                  );
-
-                  try {
-                    await onPromptSelect(prompt);
-                  } finally {
-                    // Clear loading state for this button
-                    setPrompts(prevPrompts => 
-                      prevPrompts.map(p => 
-                        p === prompt ? {...p, isLoading: false} : p
-                      )
-                    );
-                  }
-                }}
+                className={`
+                  mt-6 w-full bg-blue-50 text-slate-600 border border-slate-200 
+                  transition-all duration-300 backdrop-blur-sm
+                  ${prompt.isLoading 
+                    ? 'opacity-75 cursor-not-allowed' 
+                    : 'hover:bg-blue-100 hover:text-slate-700 hover:border-blue-200'}
+                `}
+                onClick={(e) => handlePromptClick(e, prompt)}
                 disabled={prompt.isLoading}
               >
                 {prompt.isLoading ? (
