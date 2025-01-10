@@ -13,9 +13,35 @@ import pptxgen from "pptxgenjs";
 interface Slide {
   title: string;
   content: string[];
+  style: 'title' | 'section' | 'content' | 'quote' | 'data';
+  dataType?: 'chart' | 'comparison' | 'statistics';
   bgColor: string;
   textColor: string;
 }
+
+// Define color schemes to match PPT output
+const slideStyles = {
+  title: {
+    bg: "from-blue-600 to-blue-700",
+    text: "text-white"
+  },
+  section: {
+    bg: "from-slate-800 to-slate-900",
+    text: "text-white"
+  },
+  content: {
+    bg: "from-white to-slate-50",
+    text: "text-slate-800"
+  },
+  quote: {
+    bg: "from-slate-100 to-slate-200",
+    text: "text-slate-800"
+  },
+  data: {
+    bg: "from-slate-50 to-white",
+    text: "text-slate-800"
+  }
+};
 
 interface Message {
   role: string;
@@ -116,7 +142,21 @@ export default function DemoPage() {
 4. Keep points focused and impactful
 5. Use consistent formatting throughout
 6. Limit to 4-6 points per slide for better readability
-Format as "Title: [title]" followed by bullet points using • symbol.` };
+
+Use the following slide styles:
+- Title slides (Style: title): For introduction and main section starts
+- Section slides (Style: section): For major topic transitions
+- Content slides (Style: content): For regular content
+- Quote slides (Style: quote): For important quotes or key takeaways
+- Data slides (Style: data): For statistics and data-heavy content
+
+Format each slide as:
+Title: [Slide Title]
+Style: [slide style]
+Data: [type] (only for data slides - chart/comparison/statistics)
+• Point 1
+• Point 2
+etc.` };
     
     setMessages((prev) => [...prev, displayMessage]);
     setInput("");
@@ -156,12 +196,19 @@ Format as "Title: [title]" followed by bullet points using • symbol.` };
       if (slideTexts.length > 0) {
         const parsedSlides = slideTexts.map((slideText: string, index: number) => {
           const lines: string[] = slideText.split('\n').filter((line: string) => line.trim());
-          const title = lines[0]
-            .replace(/^[IVX]+\.\s*/, '')
-            .replace(/^Title:?\s*/i, '')
-            .replace(/^Slide\s*\d*:?\s*/i, '')
-            .trim();
+          
+          // Extract title and style
+          const titleLine = lines[0].replace(/^[IVX]+\.\s*/, '').replace(/^Title:?\s*/i, '').replace(/^Slide\s*\d*:?\s*/i, '').trim();
+          const styleLine = lines.find(line => line.toLowerCase().includes('style:'))?.replace(/^Style:\s*/i, '').toLowerCase() || 'content';
+          const dataTypeLine = lines.find(line => line.toLowerCase().includes('data:'))?.replace(/^Data:\s*/i, '').toLowerCase();
+          
+          const title = titleLine;
+          const style = styleLine as Slide['style'];
+          const dataType = dataTypeLine as Slide['dataType'];
+          
+          // Extract content, skipping style and data type lines
           const content = lines.slice(1)
+            .filter(line => !line.toLowerCase().includes('style:') && !line.toLowerCase().includes('data:'))
             .map(line => line.trim())
             .filter(line => line.length > 0)
             .map(line => line
@@ -173,13 +220,13 @@ Format as "Title: [title]" followed by bullet points using • symbol.` };
             )
             .filter(line => line.length > 0);
 
-          const colorIndex = index % colorCombos.length;
-
           return {
             title,
             content,
-            bgColor: colorCombos[colorIndex].bg,
-            textColor: colorCombos[colorIndex].text
+            style,
+            dataType,
+            bgColor: slideStyles[style].bg,
+            textColor: slideStyles[style].text
           };
         });
 
@@ -241,33 +288,40 @@ Format as "Title: [title]" followed by bullet points using • symbol.` };
       });
       return;
     }
-    const parsedSlides = slideTexts.map((slideText: string, index: number) => {
-      const lines: string[] = slideText.split('\n').filter((line: string) => line.trim());
-      const title = lines[0]
-        .replace(/^[IVX]+\.\s*/, '')
-        .replace(/^Title:?\s*/i, '')
-        .replace(/^Slide\s*\d*:?\s*/i, '')
-        .trim();
-      const content = lines.slice(1)
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .map(line => line
-          .replace(/^[-•*]\s*/, '')
-          .replace(/^\d+\.\s*/, '')
-          .replace(/^[A-Z]\)\s*/, '')
-          .replace(/^[a-z]\)\s*/, '')
-          .trim()
-        )
-        .filter(line => line.length > 0);
+      const parsedSlides = slideTexts.map((slideText: string, index: number) => {
+        const lines: string[] = slideText.split('\n').filter((line: string) => line.trim());
+        
+        // Extract title and style
+        const titleLine = lines[0].replace(/^[IVX]+\.\s*/, '').replace(/^Title:?\s*/i, '').replace(/^Slide\s*\d*:?\s*/i, '').trim();
+        const styleLine = lines.find(line => line.toLowerCase().includes('style:'))?.replace(/^Style:\s*/i, '').toLowerCase() || 'content';
+        const dataTypeLine = lines.find(line => line.toLowerCase().includes('data:'))?.replace(/^Data:\s*/i, '').toLowerCase();
+        
+        const title = titleLine;
+        const style = styleLine as Slide['style'];
+        const dataType = dataTypeLine as Slide['dataType'];
+        
+        // Extract content, skipping style and data type lines
+        const content = lines.slice(1)
+          .filter(line => !line.toLowerCase().includes('style:') && !line.toLowerCase().includes('data:'))
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .map(line => line
+            .replace(/^[-•*]\s*/, '')
+            .replace(/^\d+\.\s*/, '')
+            .replace(/^[A-Z]\)\s*/, '')
+            .replace(/^[a-z]\)\s*/, '')
+            .trim()
+          )
+          .filter(line => line.length > 0);
 
-      const colorIndex = index % colorCombos.length;
-
-      return {
-        title,
-        content,
-        bgColor: colorCombos[colorIndex].bg,
-        textColor: colorCombos[colorIndex].text
-      };
+        return {
+          title,
+          content,
+          style,
+          dataType,
+          bgColor: slideStyles[style].bg,
+          textColor: slideStyles[style].text
+        };
     });
 
     setSlides(parsedSlides);
@@ -277,64 +331,273 @@ Format as "Title: [title]" followed by bullet points using • symbol.` };
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const downloadPPT = async () => {
-    const pres = new pptxgen();
+    const downloadPPT = async () => {
+      const pres = new pptxgen();
 
-    pres.author = 'SlideGen AI';
-    pres.company = 'SlideGen';
-    pres.revision = '1';
-    pres.subject = 'AI Generated Presentation';
+      // Set presentation properties
+      pres.author = 'SlideGen AI';
+      pres.company = 'SlideGen';
+      pres.revision = '1';
+      pres.subject = 'AI Generated Presentation';
 
-    slides.forEach((slide) => {
-      const pptSlide = pres.addSlide();
+      // Define modern color schemes
+      const colorSchemes = {
+        title: {
+          background: { color: '2563EB' }, // blue-600
+          title: { color: 'FFFFFF' },
+          text: { color: 'FFFFFF' }
+        },
+        section: {
+          background: { color: '1E293B' }, // slate-800
+          title: { color: 'FFFFFF' },
+          text: { color: 'FFFFFF' }
+        },
+        content: {
+          background: { color: 'FFFFFF' },
+          title: { color: '1E293B' }, // slate-800
+          text: { color: '334155' } // slate-700
+        },
+        quote: {
+          background: { color: 'F1F5F9' }, // slate-100
+          title: { color: '1E293B' }, // slate-800
+          text: { color: '334155' } // slate-700
+        },
+        data: {
+          background: { color: 'F8FAFC' }, // slate-50
+          title: { color: '1E293B' }, // slate-800
+          text: { color: '334155' } // slate-700
+        }
+      };
 
-      // Set light theme background
-      const bgColor = slide.bgColor.split(' ')[1].replace('to-', '');
-      pptSlide.background = { color: bgColor.replace('-200', '') };
+      // Define slide layouts
+      const layouts = {
+        title: (slide: any, content: any) => {
+          const scheme = colorSchemes.title;
+          slide.background = scheme.background;
+          
+          // Large centered title
+          slide.addText(content.title, {
+            x: '10%',
+            y: '35%',
+            w: '80%',
+            h: '30%',
+            fontSize: 60,
+            color: scheme.title.color,
+            bold: true,
+            align: 'center',
+            valign: 'middle',
+            wrap: true
+          });
 
-      // Add title with dynamic font size based on length
-      const titleFontSize = slide.title.length > 50 ? 32 : slide.title.length > 30 ? 36 : 40;
-      pptSlide.addText(slide.title, {
-        x: '5%',
-        y: '5%',
-        w: '90%',
-        h: '20%',
-        fontSize: titleFontSize,
-        color: '334155', // slate-700
-        bold: true,
-        align: 'center',
-        valign: 'middle',
-        wrap: true,
+          // Subtitle points with animation
+          content.content.forEach((point: string, idx: number) => {
+            slide.addText(point, {
+              x: '20%',
+              y: `${65 + (idx * 8)}%`,
+              w: '60%',
+              h: '8%',
+              fontSize: 24,
+              color: scheme.text.color,
+              align: 'center',
+              valign: 'middle',
+              transparency: 50,
+              isTextBox: true
+            });
+          });
+        },
+        section: (slide: any, content: any) => {
+          const scheme = colorSchemes.section;
+          slide.background = scheme.background;
+          
+          // Large section title with accent bar
+          slide.addShape(pres.ShapeType.rect, {
+            x: '10%',
+            y: '48%',
+            w: '80%',
+            h: '4%',
+            fill: { color: '3B82F6' } // blue-500
+          });
+
+          slide.addText(content.title, {
+            x: '10%',
+            y: '30%',
+            w: '80%',
+            h: '15%',
+            fontSize: 44,
+            color: scheme.title.color,
+            bold: true,
+            align: 'center',
+            valign: 'bottom'
+          });
+
+          content.content.forEach((point: string, idx: number) => {
+            slide.addText(point, {
+              x: '20%',
+              y: `${55 + (idx * 8)}%`,
+              w: '60%',
+              h: '8%',
+              fontSize: 24,
+              color: scheme.text.color,
+              align: 'center',
+              valign: 'middle'
+            });
+          });
+        },
+        content: (slide: any, content: any) => {
+          const scheme = colorSchemes.content;
+          slide.background = scheme.background;
+
+          // Title with bottom border
+          slide.addShape(pres.ShapeType.rect, {
+            x: '10%',
+            y: '20%',
+            w: '80%',
+            h: '0.3%',
+            fill: { color: '3B82F6' } // blue-500
+          });
+
+          slide.addText(content.title, {
+            x: '10%',
+            y: '5%',
+            w: '80%',
+            h: '15%',
+            fontSize: 36,
+            color: scheme.title.color,
+            bold: true,
+            align: 'left',
+            valign: 'middle'
+          });
+
+          // Content with bullets and progressive animation
+          content.content.forEach((point: string, idx: number) => {
+            slide.addText(point, {
+              x: '12%',
+              y: `${25 + (idx * 12)}%`,
+              w: '76%',
+              h: '10%',
+              fontSize: Math.max(18, Math.min(24, 600 / point.length)),
+              color: scheme.text.color,
+              bullet: { type: 'number', color: '3B82F6' },
+              align: 'left',
+              valign: 'middle',
+              isTextBox: true
+            });
+          });
+        },
+        quote: (slide: any, content: any) => {
+          const scheme = colorSchemes.quote;
+          slide.background = scheme.background;
+
+          // Large quote marks
+          slide.addText('"', {
+            x: '10%',
+            y: '20%',
+            w: '15%',
+            h: '20%',
+            fontSize: 120,
+            color: '3B82F6',
+            bold: true,
+            align: 'left',
+            valign: 'top'
+          });
+
+          // Main quote text
+          slide.addText(content.title, {
+            x: '15%',
+            y: '30%',
+            w: '70%',
+            h: '40%',
+            fontSize: 32,
+            color: scheme.title.color,
+            fontFace: 'Georgia',
+            align: 'center',
+            valign: 'middle',
+            italic: true
+          });
+
+          // Supporting points
+          content.content.forEach((point: string, idx: number) => {
+            slide.addText(point, {
+              x: '20%',
+              y: `${70 + (idx * 8)}%`,
+              w: '60%',
+              h: '8%',
+              fontSize: 20,
+              color: scheme.text.color,
+              align: 'center',
+              valign: 'middle'
+            });
+          });
+        },
+        data: (slide: any, content: any) => {
+          const scheme = colorSchemes.data;
+          slide.background = scheme.background;
+
+          // Title with accent background
+          slide.addShape(pres.ShapeType.rect, {
+            x: 0,
+            y: 0,
+            w: '100%',
+            h: '20%',
+            fill: { color: '3B82F6' }
+          });
+
+          slide.addText(content.title, {
+            x: '10%',
+            y: '5%',
+            w: '80%',
+            h: '10%',
+            fontSize: 32,
+            color: 'FFFFFF',
+            bold: true,
+            align: 'left',
+            valign: 'middle'
+          });
+
+          // Two-column layout for data points
+          const leftPoints = content.content.slice(0, Math.ceil(content.content.length / 2));
+          const rightPoints = content.content.slice(Math.ceil(content.content.length / 2));
+
+          leftPoints.forEach((point: string, idx: number) => {
+            slide.addText(point, {
+              x: '10%',
+              y: `${25 + (idx * 15)}%`,
+              w: '35%',
+              h: '12%',
+              fontSize: 20,
+              color: scheme.text.color,
+              bullet: { type: 'bullet', color: '3B82F6' },
+              align: 'left',
+              valign: 'middle'
+            });
+          });
+
+          rightPoints.forEach((point: string, idx: number) => {
+            slide.addText(point, {
+              x: '55%',
+              y: `${25 + (idx * 15)}%`,
+              w: '35%',
+              h: '12%',
+              fontSize: 20,
+              color: scheme.text.color,
+              bullet: { type: 'bullet', color: '3B82F6' },
+              align: 'left',
+              valign: 'middle'
+            });
+          });
+        }
+      };
+
+      // Process each slide with appropriate layout
+      slides.forEach((slide: any) => {
+        const pptSlide = pres.addSlide();
+        const style = slide.style?.toLowerCase() || 'content';
+        const layout = layouts[style as keyof typeof layouts] || layouts.content;
+        layout(pptSlide, slide);
       });
 
-      // Calculate content height and spacing
-      const contentStartY = 30;
-      const availableHeight = 100 - contentStartY;
-      const pointHeight = Math.min(10, availableHeight / Math.max(slide.content.length, 1));
-      
-      // Calculate font size based on content length
-      const maxPointLength = Math.max(...slide.content.map(p => p.length), 1);
-      const fontSize = Math.max(16, Math.min(20, 400 / maxPointLength));
-
-      // Add points with calculated spacing
-      slide.content.forEach((point, idx) => {
-        pptSlide.addText(point, {
-          x: '10%',
-          y: `${contentStartY + (idx * pointHeight)}%`,
-          w: '80%',
-          h: `${pointHeight}%`,
-          fontSize: fontSize,
-          color: '334155', // slate-700
-          bullet: true,
-          valign: 'middle',
-          wrap: true,
-          breakLine: true,
-        });
-      });
-    });
-
-    pres.writeFile({ fileName: 'SlideGen-Presentation.pptx' });
-  };
+      pres.writeFile({ fileName: 'SlideGen-Presentation.pptx' });
+    };
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-slate-50 via-blue-50 to-slate-50 py-12">
@@ -454,6 +717,7 @@ Format as "Title: [title]" followed by bullet points using • symbol.` };
                 rounded-xl shadow-2xl p-16 aspect-[16/9] relative overflow-hidden
                 bg-gradient-to-br ${slides[currentSlide].bgColor}
                 transition-all duration-500 border border-indigo-500/10
+                ${slides[currentSlide].style === 'title' || slides[currentSlide].style === 'section' ? 'border-white/20' : 'border-slate-200/20'}
               `}>
                 <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-transparent via-transparent to-blue-200/30"></div>
@@ -474,18 +738,23 @@ Format as "Title: [title]" followed by bullet points using • symbol.` };
                   <div className="relative w-full h-full flex flex-col">
                     <h2 
                       className={`
-                        text-4xl sm:text-5xl lg:text-6xl font-bold text-center mb-8 
+                        text-4xl sm:text-5xl lg:text-6xl font-bold mb-8 
                         ${slides[currentSlide].textColor} drop-shadow-lg
                         transition-all duration-300
+                        ${slides[currentSlide].style === 'content' ? 'text-left border-b-2 border-blue-500 pb-4' : 'text-center'}
+                        ${slides[currentSlide].style === 'quote' ? 'italic font-serif' : 'font-sans'}
                       `}
                       style={{
-                        fontSize: slides[currentSlide].title.length > 50 
-                          ? '2.5rem' 
-                          : slides[currentSlide].title.length > 30 
-                            ? '3rem' 
-                            : '3.5rem'
+                        fontSize: 
+                          slides[currentSlide].style === 'title' ? '4rem' :
+                          slides[currentSlide].style === 'section' ? '3.5rem' :
+                          slides[currentSlide].title.length > 50 ? '2.5rem' :
+                          slides[currentSlide].title.length > 30 ? '3rem' : '3.5rem'
                       }}
                     >
+                      {slides[currentSlide].style === 'quote' && (
+                        <span className="absolute -left-8 top-0 text-8xl text-blue-500 opacity-50">"</span>
+                      )}
                       {slides[currentSlide].title}
                     </h2>
                     
@@ -628,14 +897,28 @@ Format as "Title: [title]" followed by bullet points using • symbol.` };
                           // Display message shows only the prompt
                           const displayMessage = { role: "user", content: prompt.prompt };
                           // API message includes formatting instructions
-                          const apiMessage = { role: "user", content: `${prompt.prompt} Format the presentation with the following structure:
+                          const apiMessage = { role: "user", content: `${prompt.prompt}\n\nFormat the presentation with the following structure:
 1. Each slide should have a clear, concise title
 2. Content should be in bullet points
 3. Each point should be a complete thought
 4. Keep points focused and impactful
 5. Use consistent formatting throughout
 6. Limit to 4-6 points per slide for better readability
-Format as "Title: [title]" followed by bullet points using • symbol.` };
+
+Use the following slide styles:
+- Title slides (Style: title): For introduction and main section starts
+- Section slides (Style: section): For major topic transitions
+- Content slides (Style: content): For regular content
+- Quote slides (Style: quote): For important quotes or key takeaways
+- Data slides (Style: data): For statistics and data-heavy content
+
+Format each slide as:
+Title: [Slide Title]
+Style: [slide style]
+Data: [type] (only for data slides - chart/comparison/statistics)
+• Point 1
+• Point 2
+etc.` };
                           
                           try {
                             const response = await fetch('/api/chat', {
@@ -669,12 +952,19 @@ Format as "Title: [title]" followed by bullet points using • symbol.` };
                             );
                             const parsedSlides = slideTexts.map((slideText: string, index: number) => {
                               const lines = slideText.split('\n').filter((line: string) => line.trim());
-                              const title = lines[0]
-                                .replace(/^[IVX]+\.\s*/, '')
-                                .replace(/^Title:?\s*/i, '')
-                                .replace(/^Slide\s*\d*:?\s*/i, '')
-                                .trim();
+                              
+                              // Extract title and style
+                              const titleLine = lines[0].replace(/^[IVX]+\.\s*/, '').replace(/^Title:?\s*/i, '').replace(/^Slide\s*\d*:?\s*/i, '').trim();
+                              const styleLine = lines.find(line => line.toLowerCase().includes('style:'))?.replace(/^Style:\s*/i, '').toLowerCase() || 'content';
+                              const dataTypeLine = lines.find(line => line.toLowerCase().includes('data:'))?.replace(/^Data:\s*/i, '').toLowerCase();
+                              
+                              const title = titleLine;
+                              const style = styleLine as Slide['style'];
+                              const dataType = dataTypeLine as Slide['dataType'];
+                              
+                              // Extract content, skipping style and data type lines
                               const content = lines.slice(1)
+                                .filter(line => !line.toLowerCase().includes('style:') && !line.toLowerCase().includes('data:'))
                                 .map(line => line.trim())
                                 .filter(line => line.length > 0)
                                 .map(line => line
@@ -686,12 +976,13 @@ Format as "Title: [title]" followed by bullet points using • symbol.` };
                                 )
                                 .filter(line => line.length > 0);
 
-                              const colorIndex = index % colorCombos.length;
                               return {
                                 title,
                                 content,
-                                bgColor: colorCombos[colorIndex].bg,
-                                textColor: colorCombos[colorIndex].text
+                                style,
+                                dataType,
+                                bgColor: slideStyles[style].bg,
+                                textColor: slideStyles[style].text
                               };
                             });
 
