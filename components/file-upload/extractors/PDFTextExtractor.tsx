@@ -3,10 +3,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TextItem } from 'pdfjs-dist/types/src/display/api';
-import { useUpload } from './UploadContext';
-import { Button } from '../ui/button';
+import { useUpload } from '../contexts/UploadContext';
+import { Button } from '../../ui/button';
 import { Loader2, Copy, Check, Search, FileText } from 'lucide-react';
-import { FormattedPDFView } from './FormattedPDFView';
+import { FormattedPDFView } from '../utils/FormattedPDFView';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
 

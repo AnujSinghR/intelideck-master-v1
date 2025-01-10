@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { FileUploadModal } from "./FileUploadModal";
-import { useUpload } from "./UploadContext";
+import { FileUploadModal } from "../modals/FileUploadModal";
+import { useUpload } from "../contexts/UploadContext";
 
 export default function FileUploadExample() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);

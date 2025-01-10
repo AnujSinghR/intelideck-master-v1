@@ -1,9 +1,6 @@
 "use client";
 
-import { PDFViewer } from "../../components/file-upload/PDFViewer";
-import { PDFReskineExtractor } from "../../components/file-upload/PDFReskineExtractor";
-import { UploadProvider } from "../../components/file-upload/UploadContext";
-import FileUploadExample from "../../components/file-upload/FileUploadExample";
+import { PDFViewer, PDFReskineExtractor, UploadProvider, FileUploadExample } from "../../components/file-upload";
 import { useState, useEffect } from "react";
 import { FileText, Eye, Keyboard } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";

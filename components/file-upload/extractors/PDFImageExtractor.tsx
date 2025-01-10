@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { useUpload } from "./UploadContext";
+import { useUpload } from "../contexts/UploadContext";
 import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocumentProxy } from "pdfjs-dist/types/src/display/api";
 import { Download, Image as ImageIcon, Loader2 } from "lucide-react";

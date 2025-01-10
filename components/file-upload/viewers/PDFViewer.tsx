@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef, memo } from "react";
-import { useUpload } from "./UploadContext";
+import { useUpload } from "../contexts/UploadContext";
 import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocumentProxy } from "pdfjs-dist/types/src/display/api";
-import { ScrollArea } from "../ui/scroll-area";
+import { ScrollArea } from "../../ui/scroll-area";
 import { Loader2, ZoomIn, ZoomOut } from "lucide-react";
 
 // Ensure worker is loaded correctly in both development and production

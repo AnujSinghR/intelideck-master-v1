@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePPTUpload } from "./PPTUploadContext";
-import { extractPptData, PPTExtractionError, SlideData } from "../../lib/pptExtractor";
+import { usePPTUpload } from "../contexts/PPTUploadContext";
+import { extractPptData, PPTExtractionError, SlideData } from "../../../lib/pptExtractor";
 
 interface PPTViewerProps {
   className?: string;
@@ -103,7 +103,7 @@ export function PPTViewer({ className = "" }: PPTViewerProps) {
           <div className="space-y-4">
             {/* Text Content */}
             <div className="prose max-w-none">
-              {slides[currentSlide].text.split('\n').map((line, index) => (
+              {slides[currentSlide].text.split('\n').map((line: string, index: number) => (
                 <p key={index} className="mb-2">{line}</p>
               ))}
             </div>
@@ -111,7 +111,7 @@ export function PPTViewer({ className = "" }: PPTViewerProps) {
             {/* Images */}
             {slides[currentSlide].images.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {slides[currentSlide].images.map((imageUrl, index) => (
+                {slides[currentSlide].images.map((imageUrl: string, index: number) => (
                   <div key={index} className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
                     <img
                       src={imageUrl}

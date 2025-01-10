@@ -1,9 +1,9 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../ui/dialog";
 import { Upload } from "lucide-react";
 import { useState, useRef } from "react";
-import { useUpload } from "./UploadContext";
+import { useUpload } from "../contexts/UploadContext";
 
 interface FileUploadModalProps {
   isOpen: boolean;

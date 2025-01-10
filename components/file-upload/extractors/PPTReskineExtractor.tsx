@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from 'react';
-import { usePPTUpload } from './PPTUploadContext';
-import { Button } from '../ui/button';
+import { usePPTUpload } from '../contexts/PPTUploadContext';
+import { Button } from '../../ui/button';
 import { Loader2, Copy, Check, Search, Download } from 'lucide-react';
-import { extractPptData, PPTExtractionError, SlideData } from '../../lib/pptExtractor';
+import { extractPptData, PPTExtractionError, SlideData } from '../../../lib/pptExtractor';
 
 interface ExtractedImage {
   data: string;
@@ -47,8 +47,8 @@ export function PPTReskineExtractor() {
         setExtractedSlides(slides);
 
         // Process images
-        const images = slides.flatMap((slide, index) => 
-          slide.images.map(imageUrl => ({
+        const images = slides.flatMap((slide: SlideData, index: number) => 
+          slide.images.map((imageUrl: string) => ({
             data: imageUrl,
             slideNumber: index + 1,
             format: 'PNG',
@@ -58,7 +58,7 @@ export function PPTReskineExtractor() {
         setExtractedImages(images);
 
         // Format content for display
-        const formattedText = slides.map((slide, index) => {
+        const formattedText = slides.map((slide: SlideData, index: number) => {
           const slideNumber = index + 1;
           const slideText = slide.text.trim();
           return `[Slide ${slideNumber}]\n${slideText}`;
@@ -66,7 +66,7 @@ export function PPTReskineExtractor() {
 
         setFormattedContent(formattedText);
 
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error extracting content:', err);
         setError(err instanceof PPTExtractionError ? err.message : 'Failed to extract content');
       } finally {
@@ -82,7 +82,7 @@ export function PPTReskineExtractor() {
       await navigator.clipboard.writeText(formattedContent);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to copy text:', err);
     }
   }, [formattedContent]);
